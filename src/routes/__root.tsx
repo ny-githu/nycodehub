@@ -7,8 +7,6 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { Toaster } from "sonner";
-import { AuthProvider } from "@/hooks/use-auth";
 
 import appCss from "../styles.css?url";
 
@@ -74,14 +72,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "byteforge — Learn coding by doing" },
+      { title: "codehub" },
       { name: "description", content: "Hands-on courses and a browser-based practice lab for coding and software engineering." },
       { name: "author", content: "byteforge" },
-      { property: "og:title", content: "byteforge — Learn coding by doing" },
-      { property: "og:description", content: "Hands-on courses and a browser-based practice lab for software engineering." },
+      { property: "og:title", content: "codehub" },
+      { property: "og:description", content: "Hands-on courses and a browser-based practice lab for coding and software engineering." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "codehub" },
+      { name: "twitter:description", content: "Hands-on courses and a browser-based practice lab for coding and software engineering." },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/14005bb4-b35f-498d-88e2-d9163f5af62d" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/14005bb4-b35f-498d-88e2-d9163f5af62d" },
     ],
     links: [
       {
@@ -115,10 +117,7 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Outlet />
-        <Toaster richColors position="top-right" theme="dark" />
-      </AuthProvider>
+      <Outlet />
     </QueryClientProvider>
   );
 }
