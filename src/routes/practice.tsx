@@ -89,10 +89,10 @@ function Practice() {
           </div>
         </div>
 
-        {/* Workspace: video left, terminal right (TryHackMe style) */}
-        <div className="grid gap-4 lg:grid-cols-2 min-h-[70vh]">
+        {/* Workspace: video left, terminal right — tight side-by-side for easy copy/paste */}
+        <div className="grid gap-2 md:grid-cols-2 min-h-[70vh]">
           {/* LEFT — video + tasks */}
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
             <div className="relative rounded-xl overflow-hidden border border-border bg-black aspect-video shadow-elevated">
               {/* Fake video stage */}
               <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-background to-accent/20 grid-bg opacity-80" />
@@ -141,7 +141,7 @@ function Practice() {
           </div>
 
           {/* RIGHT — terminal + file tree */}
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
             <div className="rounded-xl border border-border bg-gradient-card overflow-hidden">
               <div className="flex items-center gap-2 px-3 py-2 border-b border-border bg-surface text-xs font-mono text-muted-foreground">
                 <FolderTree className="size-4 text-primary-glow" />
