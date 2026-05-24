@@ -138,6 +138,29 @@ function Practice() {
                 ))}
               </ul>
             </div>
+
+            {/* Copy-ready snippets from the lesson */}
+            <div className="rounded-xl border border-border bg-gradient-card p-4">
+              <h3 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                <span className="font-mono text-primary-glow text-xs">snippets</span>
+                <span className="text-[10px] text-muted-foreground">click to copy</span>
+              </h3>
+              <div className="space-y-2">
+                {[
+                  "const [count, setCount] = useState(0)",
+                  "<Counter initial={0} step={1} />",
+                  "git commit -m 'add Counter component'",
+                ].map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => { navigator.clipboard.writeText(s); }}
+                    className="w-full text-left px-3 py-2 text-xs font-mono bg-surface hover:bg-surface/70 border border-border rounded text-foreground transition truncate"
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
           {/* RIGHT — terminal + file tree */}
