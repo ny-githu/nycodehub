@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PracticeRouteImport } from './routes/practice'
 import { Route as PathsRouteImport } from './routes/paths'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as InstructorsRouteImport } from './routes/instructors'
 import { Route as CoursesRouteImport } from './routes/courses'
 import { Route as IndexRouteImport } from './routes/index'
@@ -29,6 +30,11 @@ const PracticeRoute = PracticeRouteImport.update({
 const PathsRoute = PathsRouteImport.update({
   id: '/paths',
   path: '/paths',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InstructorsRoute = InstructorsRouteImport.update({
@@ -51,6 +57,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/courses': typeof CoursesRoute
   '/instructors': typeof InstructorsRoute
+  '/login': typeof LoginRoute
   '/paths': typeof PathsRoute
   '/practice': typeof PracticeRoute
   '/pricing': typeof PricingRoute
@@ -59,6 +66,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/courses': typeof CoursesRoute
   '/instructors': typeof InstructorsRoute
+  '/login': typeof LoginRoute
   '/paths': typeof PathsRoute
   '/practice': typeof PracticeRoute
   '/pricing': typeof PricingRoute
@@ -68,6 +76,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/courses': typeof CoursesRoute
   '/instructors': typeof InstructorsRoute
+  '/login': typeof LoginRoute
   '/paths': typeof PathsRoute
   '/practice': typeof PracticeRoute
   '/pricing': typeof PricingRoute
@@ -78,16 +87,25 @@ export interface FileRouteTypes {
     | '/'
     | '/courses'
     | '/instructors'
+    | '/login'
     | '/paths'
     | '/practice'
     | '/pricing'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/courses' | '/instructors' | '/paths' | '/practice' | '/pricing'
+  to:
+    | '/'
+    | '/courses'
+    | '/instructors'
+    | '/login'
+    | '/paths'
+    | '/practice'
+    | '/pricing'
   id:
     | '__root__'
     | '/'
     | '/courses'
     | '/instructors'
+    | '/login'
     | '/paths'
     | '/practice'
     | '/pricing'
@@ -97,6 +115,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CoursesRoute: typeof CoursesRoute
   InstructorsRoute: typeof InstructorsRoute
+  LoginRoute: typeof LoginRoute
   PathsRoute: typeof PathsRoute
   PracticeRoute: typeof PracticeRoute
   PricingRoute: typeof PricingRoute
@@ -123,6 +142,13 @@ declare module '@tanstack/react-router' {
       path: '/paths'
       fullPath: '/paths'
       preLoaderRoute: typeof PathsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/instructors': {
@@ -153,6 +179,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CoursesRoute: CoursesRoute,
   InstructorsRoute: InstructorsRoute,
+  LoginRoute: LoginRoute,
   PathsRoute: PathsRoute,
   PracticeRoute: PracticeRoute,
   PricingRoute: PricingRoute,

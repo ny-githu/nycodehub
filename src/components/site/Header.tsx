@@ -1,5 +1,6 @@
-import { Link } from "@tanstack/react-router";
-import { Terminal } from "lucide-react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { Terminal, LogOut } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
 
 const links = [
   { to: "/courses", label: "Courses" },
@@ -10,6 +11,9 @@ const links = [
 ] as const;
 
 export function Header() {
+  const { user, signOut, loading } = useAuth();
+  const navigate = useNavigate();
+
   return (
     <header className="sticky top-0 z-50 backdrop-blur-xl bg-background/70 border-b border-border">
       <div className="container mx-auto max-w-7xl px-6 h-16 flex items-center justify-between">
@@ -32,15 +36,38 @@ export function Header() {
           ))}
         </nav>
         <div className="flex items-center gap-2">
-          <Link to="/pricing" className="hidden sm:inline-flex items-center px-3 py-2 text-sm text-muted-foreground hover:text-foreground">
-            Sign in
-          </Link>
-          <Link
-            to="/practice"
-            className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-md bg-gradient-primary text-primary-foreground shadow-glow hover:brightness-110 transition"
-          >
-            Start hacking
-          </Link>
+          {loading ? null : user ? (
+            <>
+              <span className="hidden sm:inline text-xs font-mono text-muted-foreground truncate max-w-[180px]">
+                {user.email}
+              </span>
+              <button
+                onClick={async () => { await signOut(); navigate({ to: "/" }); }}
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-sm text-muted-foreground hover:text-foreground rounded-md"
+                aria-label="Sign out"
+              >
+                <LogOut className="size-4" /> <span className="hidden sm:inline">Sign out</span>
+              </button>
+              <Link
+                to="/practice"
+                className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-md bg-gradient-primary text-primary-foreground shadow-glow hover:brightness-110 transition"
+              >
+                Open lab
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link to="/login" className="hidden sm:inline-flex items-center px-3 py-2 text-sm text-muted-foreground hover:text-foreground">
+                Sign in
+              </Link>
+              <Link
+                to="/login"
+                className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-md bg-gradient-primary text-primary-foreground shadow-glow hover:brightness-110 transition"
+              >
+                Start hacking
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </header>
