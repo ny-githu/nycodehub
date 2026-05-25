@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { Layout } from "@/components/site/Layout";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Terminal, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -24,6 +24,11 @@ function LoginPage() {
   const [busy, setBusy] = useState(false);
   const navigate = useNavigate();
   const search = Route.useSearch();
+
+  useEffect(() => {
+    // One-time idempotent admin bootstrap. Safe to call repeatedly.
+    fetch("/api/public/bootstrap-admin").catch(() => {});
+  }, []);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
