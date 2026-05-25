@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Layout } from "@/components/site/Layout";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
 
-export const Route = createFileRoute("/paths")({
+export const Route = createFileRoute("/_authenticated/paths")({
   head: () => ({
     meta: [
       { title: "Learning paths — byteforge" },

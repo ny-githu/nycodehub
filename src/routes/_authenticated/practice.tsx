@@ -3,7 +3,7 @@ import { Layout } from "@/components/site/Layout";
 import { useEffect, useRef, useState } from "react";
 import { Play, Pause, CheckCircle2, Circle, FolderTree, ChevronRight } from "lucide-react";
 
-export const Route = createFileRoute("/practice")({
+export const Route = createFileRoute("/_authenticated/practice")({
   head: () => ({
     meta: [
       { title: "Practice Lab — byteforge" },

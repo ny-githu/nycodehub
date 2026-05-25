@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Layout } from "@/components/site/Layout";
 import { Github, Twitter } from "lucide-react";
 
-export const Route = createFileRoute("/instructors")({
+export const Route = createFileRoute("/_authenticated/instructors")({
   head: () => ({
     meta: [
       { title: "Instructors — byteforge" },
