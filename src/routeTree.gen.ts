@@ -10,116 +10,143 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedPricingRouteImport } from './routes/_authenticated/pricing'
 import { Route as AuthenticatedPracticeRouteImport } from './routes/_authenticated/practice'
 import { Route as AuthenticatedPathsRouteImport } from './routes/_authenticated/paths'
 import { Route as AuthenticatedInstructorsRouteImport } from './routes/_authenticated/instructors'
 import { Route as AuthenticatedCoursesRouteImport } from './routes/_authenticated/courses'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as ApiPublicBootstrapAdminRouteImport } from './routes/api/public/bootstrap-admin'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
-  id: '/_authenticated/',
-  path: '/',
+const AuthenticatedRoute = AuthenticatedRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedPricingRoute = AuthenticatedPricingRouteImport.update({
-  id: '/_authenticated/pricing',
+  id: '/pricing',
   path: '/pricing',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedPracticeRoute = AuthenticatedPracticeRouteImport.update({
-  id: '/_authenticated/practice',
+  id: '/practice',
   path: '/practice',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedPathsRoute = AuthenticatedPathsRouteImport.update({
-  id: '/_authenticated/paths',
+  id: '/paths',
   path: '/paths',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedInstructorsRoute =
   AuthenticatedInstructorsRouteImport.update({
-    id: '/_authenticated/instructors',
+    id: '/instructors',
     path: '/instructors',
-    getParentRoute: () => rootRouteImport,
+    getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedCoursesRoute = AuthenticatedCoursesRouteImport.update({
-  id: '/_authenticated/courses',
+  id: '/courses',
   path: '/courses',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const ApiPublicBootstrapAdminRoute = ApiPublicBootstrapAdminRouteImport.update({
+  id: '/api/public/bootstrap-admin',
+  path: '/api/public/bootstrap-admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
+  '/': typeof AuthenticatedIndexRoute
   '/login': typeof LoginRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/courses': typeof AuthenticatedCoursesRoute
   '/instructors': typeof AuthenticatedInstructorsRoute
   '/paths': typeof AuthenticatedPathsRoute
   '/practice': typeof AuthenticatedPracticeRoute
   '/pricing': typeof AuthenticatedPricingRoute
-  '/': typeof AuthenticatedIndexRoute
+  '/api/public/bootstrap-admin': typeof ApiPublicBootstrapAdminRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/courses': typeof AuthenticatedCoursesRoute
   '/instructors': typeof AuthenticatedInstructorsRoute
   '/paths': typeof AuthenticatedPathsRoute
   '/practice': typeof AuthenticatedPracticeRoute
   '/pricing': typeof AuthenticatedPricingRoute
   '/': typeof AuthenticatedIndexRoute
+  '/api/public/bootstrap-admin': typeof ApiPublicBootstrapAdminRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/login': typeof LoginRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/courses': typeof AuthenticatedCoursesRoute
   '/_authenticated/instructors': typeof AuthenticatedInstructorsRoute
   '/_authenticated/paths': typeof AuthenticatedPathsRoute
   '/_authenticated/practice': typeof AuthenticatedPracticeRoute
   '/_authenticated/pricing': typeof AuthenticatedPricingRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/api/public/bootstrap-admin': typeof ApiPublicBootstrapAdminRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
+    | '/'
     | '/login'
+    | '/admin'
     | '/courses'
     | '/instructors'
     | '/paths'
     | '/practice'
     | '/pricing'
-    | '/'
+    | '/api/public/bootstrap-admin'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
+    | '/admin'
     | '/courses'
     | '/instructors'
     | '/paths'
     | '/practice'
     | '/pricing'
     | '/'
+    | '/api/public/bootstrap-admin'
   id:
     | '__root__'
+    | '/_authenticated'
     | '/login'
+    | '/_authenticated/admin'
     | '/_authenticated/courses'
     | '/_authenticated/instructors'
     | '/_authenticated/paths'
     | '/_authenticated/practice'
     | '/_authenticated/pricing'
     | '/_authenticated/'
+    | '/api/public/bootstrap-admin'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   LoginRoute: typeof LoginRoute
-  AuthenticatedCoursesRoute: typeof AuthenticatedCoursesRoute
-  AuthenticatedInstructorsRoute: typeof AuthenticatedInstructorsRoute
-  AuthenticatedPathsRoute: typeof AuthenticatedPathsRoute
-  AuthenticatedPracticeRoute: typeof AuthenticatedPracticeRoute
-  AuthenticatedPricingRoute: typeof AuthenticatedPricingRoute
-  AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  ApiPublicBootstrapAdminRoute: typeof ApiPublicBootstrapAdminRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -131,59 +158,100 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/': {
       id: '/_authenticated/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/pricing': {
       id: '/_authenticated/pricing'
       path: '/pricing'
       fullPath: '/pricing'
       preLoaderRoute: typeof AuthenticatedPricingRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/practice': {
       id: '/_authenticated/practice'
       path: '/practice'
       fullPath: '/practice'
       preLoaderRoute: typeof AuthenticatedPracticeRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/paths': {
       id: '/_authenticated/paths'
       path: '/paths'
       fullPath: '/paths'
       preLoaderRoute: typeof AuthenticatedPathsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/instructors': {
       id: '/_authenticated/instructors'
       path: '/instructors'
       fullPath: '/instructors'
       preLoaderRoute: typeof AuthenticatedInstructorsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/courses': {
       id: '/_authenticated/courses'
       path: '/courses'
       fullPath: '/courses'
       preLoaderRoute: typeof AuthenticatedCoursesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/api/public/bootstrap-admin': {
+      id: '/api/public/bootstrap-admin'
+      path: '/api/public/bootstrap-admin'
+      fullPath: '/api/public/bootstrap-admin'
+      preLoaderRoute: typeof ApiPublicBootstrapAdminRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
 }
 
-const rootRouteChildren: RootRouteChildren = {
-  LoginRoute: LoginRoute,
+interface AuthenticatedRouteChildren {
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
+  AuthenticatedCoursesRoute: typeof AuthenticatedCoursesRoute
+  AuthenticatedInstructorsRoute: typeof AuthenticatedInstructorsRoute
+  AuthenticatedPathsRoute: typeof AuthenticatedPathsRoute
+  AuthenticatedPracticeRoute: typeof AuthenticatedPracticeRoute
+  AuthenticatedPricingRoute: typeof AuthenticatedPricingRoute
+  AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+}
+
+const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedCoursesRoute: AuthenticatedCoursesRoute,
   AuthenticatedInstructorsRoute: AuthenticatedInstructorsRoute,
   AuthenticatedPathsRoute: AuthenticatedPathsRoute,
   AuthenticatedPracticeRoute: AuthenticatedPracticeRoute,
   AuthenticatedPricingRoute: AuthenticatedPricingRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+}
+
+const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
+  AuthenticatedRouteChildren,
+)
+
+const rootRouteChildren: RootRouteChildren = {
+  AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  LoginRoute: LoginRoute,
+  ApiPublicBootstrapAdminRoute: ApiPublicBootstrapAdminRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

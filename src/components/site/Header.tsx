@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Terminal, LogOut } from "lucide-react";
+import { Terminal, LogOut, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 
 const links = [
