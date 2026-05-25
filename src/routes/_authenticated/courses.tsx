@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useMemo } from "react";
 
-export const Route = createFileRoute("/courses")({
+export const Route = createFileRoute("/_authenticated/courses")({
   head: () => ({
     meta: [
       { title: "Courses — byteforge" },
