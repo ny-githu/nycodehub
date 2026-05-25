@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Layout } from "@/components/site/Layout";
 import { Check, Star } from "lucide-react";
 
-export const Route = createFileRoute("/pricing")({
+export const Route = createFileRoute("/_authenticated/pricing")({
   head: () => ({
     meta: [
       { title: "Pricing — byteforge" },

@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Terminal, LogOut } from "lucide-react";
+import { Terminal, LogOut, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 
 const links = [
@@ -11,7 +11,7 @@ const links = [
 ] as const;
 
 export function Header() {
-  const { user, signOut, loading } = useAuth();
+  const { user, signOut, loading, isAdmin } = useAuth();
   const navigate = useNavigate();
 
   return (
@@ -34,6 +34,15 @@ export function Header() {
               {l.label}
             </Link>
           ))}
+          {isAdmin && (
+            <Link
+              to="/admin"
+              className="px-3 py-2 text-sm text-primary-glow hover:text-foreground transition-colors rounded-md inline-flex items-center gap-1"
+              activeProps={{ className: "px-3 py-2 text-sm text-foreground rounded-md bg-surface inline-flex items-center gap-1" }}
+            >
+              <ShieldCheck className="size-3.5" /> Admin
+            </Link>
+          )}
         </nav>
         <div className="flex items-center gap-2">
           {loading ? null : user ? (
@@ -42,7 +51,7 @@ export function Header() {
                 {user.email}
               </span>
               <button
-                onClick={async () => { await signOut(); navigate({ to: "/" }); }}
+                onClick={async () => { await signOut(); navigate({ to: "/login" }); }}
                 className="inline-flex items-center gap-1.5 px-3 py-2 text-sm text-muted-foreground hover:text-foreground rounded-md"
                 aria-label="Sign out"
               >
@@ -56,17 +65,12 @@ export function Header() {
               </Link>
             </>
           ) : (
-            <>
-              <Link to="/login" className="hidden sm:inline-flex items-center px-3 py-2 text-sm text-muted-foreground hover:text-foreground">
-                Sign in
-              </Link>
-              <Link
-                to="/login"
-                className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-md bg-gradient-primary text-primary-foreground shadow-glow hover:brightness-110 transition"
-              >
-                Start hacking
-              </Link>
-            </>
+            <Link
+              to="/login"
+              className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-md bg-gradient-primary text-primary-foreground shadow-glow hover:brightness-110 transition"
+            >
+              Sign in
+            </Link>
           )}
         </div>
       </div>
