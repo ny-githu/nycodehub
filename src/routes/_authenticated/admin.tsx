@@ -311,7 +311,7 @@ function PlansTab() {
   const { data: plans, isLoading } = useQuery({ queryKey: ["admin-plans"], queryFn: () => listFn() });
 
   const upsertMut = useMutation({
-    mutationFn: (v: Parameters<typeof upsertFn>[0]["data"]) => upsertFn({ data: v }),
+    mutationFn: (v: { id?: string; name: string; durationDays: number; amountRwf: number; active: boolean; sortOrder: number }) => upsertFn({ data: v }),
     onSuccess: () => { toast.success("Saved"); qc.invalidateQueries({ queryKey: ["admin-plans"] }); },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
   });
