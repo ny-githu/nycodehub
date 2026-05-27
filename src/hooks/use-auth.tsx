@@ -7,6 +7,9 @@ type AuthCtx = {
   session: Session | null;
   loading: boolean;
   isAdmin: boolean;
+  expiresAt: string | null;
+  expired: boolean;
+  refreshExpiry: () => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -15,6 +18,9 @@ const Ctx = createContext<AuthCtx>({
   session: null,
   loading: true,
   isAdmin: false,
+  expiresAt: null,
+  expired: false,
+  refreshExpiry: async () => {},
   signOut: async () => {},
 });
 
@@ -22,6 +28,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [expiresAt, setExpiresAt] = useState<string | null>(null);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
@@ -35,19 +42,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
+  async function loadAccount(uid: string) {
+    const [{ data: role }, { data: profile }] = await Promise.all([
+      supabase.from("user_roles").select("role").eq("user_id", uid).eq("role", "admin").maybeSingle(),
+      supabase.from("profiles").select("expires_at").eq("id", uid).maybeSingle(),
+    ]);
+    setIsAdmin(!!role);
+    setExpiresAt((profile?.expires_at as string | null) ?? null);
+  }
+
   useEffect(() => {
     if (!session?.user) {
       setIsAdmin(false);
+      setExpiresAt(null);
       return;
     }
-    supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", session.user.id)
-      .eq("role", "admin")
-      .maybeSingle()
-      .then(({ data }) => setIsAdmin(!!data));
+    loadAccount(session.user.id);
   }, [session?.user?.id]);
+
+  const expired = !isAdmin && !!expiresAt && new Date(expiresAt) < new Date();
 
   return (
     <Ctx.Provider
@@ -56,9 +69,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         session,
         loading,
         isAdmin,
-        signOut: async () => {
-          await supabase.auth.signOut();
-        },
+        expiresAt,
+        expired,
+        refreshExpiry: async () => { if (session?.user) await loadAccount(session.user.id); },
+        signOut: async () => { await supabase.auth.signOut(); },
       }}
     >
       {children}

@@ -1,13 +1,13 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Terminal, LogOut, ShieldCheck } from "lucide-react";
+import { LogOut, ShieldCheck, CreditCard } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { Logo } from "./Logo";
 
 const links = [
   { to: "/courses", label: "Courses" },
-  { to: "/paths", label: "Paths" },
   { to: "/practice", label: "Practice" },
   { to: "/instructors", label: "Instructors" },
-  { to: "/pricing", label: "Pricing" },
+  { to: "/payment", label: "Payment" },
 ] as const;
 
 export function Header() {
@@ -17,20 +17,16 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 backdrop-blur-xl bg-background/70 border-b border-border">
       <div className="container mx-auto max-w-7xl px-6 h-16 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2 font-mono font-bold text-foreground">
-          <span className="grid place-items-center size-8 rounded-md bg-gradient-primary shadow-glow">
-            <Terminal className="size-4 text-primary-foreground" />
-          </span>
-          <span>byteforge<span className="text-primary-glow">_</span></span>
-        </Link>
+        <Logo />
         <nav className="hidden md:flex items-center gap-1">
           {links.map((l) => (
             <Link
               key={l.to}
               to={l.to}
-              className="px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors rounded-md"
-              activeProps={{ className: "px-3 py-2 text-sm text-foreground rounded-md bg-surface" }}
+              className="px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors rounded-md inline-flex items-center gap-1"
+              activeProps={{ className: "px-3 py-2 text-sm text-foreground rounded-md bg-surface inline-flex items-center gap-1" }}
             >
+              {l.label === "Payment" && <CreditCard className="size-3.5" />}
               {l.label}
             </Link>
           ))}
@@ -53,7 +49,6 @@ export function Header() {
               <button
                 onClick={async () => { await signOut(); navigate({ to: "/login" }); }}
                 className="inline-flex items-center gap-1.5 px-3 py-2 text-sm text-muted-foreground hover:text-foreground rounded-md"
-                aria-label="Sign out"
               >
                 <LogOut className="size-4" /> <span className="hidden sm:inline">Sign out</span>
               </button>

@@ -120,12 +120,106 @@ export type Database = {
           },
         ]
       }
+      payment_plans: {
+        Row: {
+          active: boolean
+          amount_rwf: number
+          created_at: string
+          duration_days: number
+          id: string
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          amount_rwf: number
+          created_at?: string
+          duration_days: number
+          id?: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          amount_rwf?: number
+          created_at?: string
+          duration_days?: number
+          id?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      payment_requests: {
+        Row: {
+          amount_rwf: number
+          created_at: string
+          id: string
+          note: string | null
+          plan_id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          transaction_id: string
+          user_id: string
+        }
+        Insert: {
+          amount_rwf: number
+          created_at?: string
+          id?: string
+          note?: string | null
+          plan_id: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          transaction_id: string
+          user_id: string
+        }
+        Update: {
+          amount_rwf?: number
+          created_at?: string
+          id?: string
+          note?: string | null
+          plan_id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          transaction_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      payment_settings: {
+        Row: {
+          id: number
+          instructions: string
+          mobile_code: string
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          instructions?: string
+          mobile_code?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          instructions?: string
+          mobile_code?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
           bio: string | null
           created_at: string
           display_name: string | null
+          expires_at: string | null
           id: string
           updated_at: string
         }
@@ -134,6 +228,7 @@ export type Database = {
           bio?: string | null
           created_at?: string
           display_name?: string | null
+          expires_at?: string | null
           id: string
           updated_at?: string
         }
@@ -142,6 +237,7 @@ export type Database = {
           bio?: string | null
           created_at?: string
           display_name?: string | null
+          expires_at?: string | null
           id?: string
           updated_at?: string
         }

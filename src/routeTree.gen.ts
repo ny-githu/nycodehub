@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedPricingRouteImport } from './routes/_authenticated/pricing'
 import { Route as AuthenticatedPracticeRouteImport } from './routes/_authenticated/practice'
+import { Route as AuthenticatedPaymentRouteImport } from './routes/_authenticated/payment'
 import { Route as AuthenticatedPathsRouteImport } from './routes/_authenticated/paths'
 import { Route as AuthenticatedInstructorsRouteImport } from './routes/_authenticated/instructors'
 import { Route as AuthenticatedCoursesRouteImport } from './routes/_authenticated/courses'
@@ -42,6 +43,11 @@ const AuthenticatedPricingRoute = AuthenticatedPricingRouteImport.update({
 const AuthenticatedPracticeRoute = AuthenticatedPracticeRouteImport.update({
   id: '/practice',
   path: '/practice',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedPaymentRoute = AuthenticatedPaymentRouteImport.update({
+  id: '/payment',
+  path: '/payment',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedPathsRoute = AuthenticatedPathsRouteImport.update({
@@ -78,6 +84,7 @@ export interface FileRoutesByFullPath {
   '/courses': typeof AuthenticatedCoursesRoute
   '/instructors': typeof AuthenticatedInstructorsRoute
   '/paths': typeof AuthenticatedPathsRoute
+  '/payment': typeof AuthenticatedPaymentRoute
   '/practice': typeof AuthenticatedPracticeRoute
   '/pricing': typeof AuthenticatedPricingRoute
   '/api/public/bootstrap-admin': typeof ApiPublicBootstrapAdminRoute
@@ -88,6 +95,7 @@ export interface FileRoutesByTo {
   '/courses': typeof AuthenticatedCoursesRoute
   '/instructors': typeof AuthenticatedInstructorsRoute
   '/paths': typeof AuthenticatedPathsRoute
+  '/payment': typeof AuthenticatedPaymentRoute
   '/practice': typeof AuthenticatedPracticeRoute
   '/pricing': typeof AuthenticatedPricingRoute
   '/': typeof AuthenticatedIndexRoute
@@ -101,6 +109,7 @@ export interface FileRoutesById {
   '/_authenticated/courses': typeof AuthenticatedCoursesRoute
   '/_authenticated/instructors': typeof AuthenticatedInstructorsRoute
   '/_authenticated/paths': typeof AuthenticatedPathsRoute
+  '/_authenticated/payment': typeof AuthenticatedPaymentRoute
   '/_authenticated/practice': typeof AuthenticatedPracticeRoute
   '/_authenticated/pricing': typeof AuthenticatedPricingRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
@@ -115,6 +124,7 @@ export interface FileRouteTypes {
     | '/courses'
     | '/instructors'
     | '/paths'
+    | '/payment'
     | '/practice'
     | '/pricing'
     | '/api/public/bootstrap-admin'
@@ -125,6 +135,7 @@ export interface FileRouteTypes {
     | '/courses'
     | '/instructors'
     | '/paths'
+    | '/payment'
     | '/practice'
     | '/pricing'
     | '/'
@@ -137,6 +148,7 @@ export interface FileRouteTypes {
     | '/_authenticated/courses'
     | '/_authenticated/instructors'
     | '/_authenticated/paths'
+    | '/_authenticated/payment'
     | '/_authenticated/practice'
     | '/_authenticated/pricing'
     | '/_authenticated/'
@@ -186,6 +198,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPracticeRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/payment': {
+      id: '/_authenticated/payment'
+      path: '/payment'
+      fullPath: '/payment'
+      preLoaderRoute: typeof AuthenticatedPaymentRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/paths': {
       id: '/_authenticated/paths'
       path: '/paths'
@@ -229,6 +248,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedCoursesRoute: typeof AuthenticatedCoursesRoute
   AuthenticatedInstructorsRoute: typeof AuthenticatedInstructorsRoute
   AuthenticatedPathsRoute: typeof AuthenticatedPathsRoute
+  AuthenticatedPaymentRoute: typeof AuthenticatedPaymentRoute
   AuthenticatedPracticeRoute: typeof AuthenticatedPracticeRoute
   AuthenticatedPricingRoute: typeof AuthenticatedPricingRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
@@ -239,6 +259,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedCoursesRoute: AuthenticatedCoursesRoute,
   AuthenticatedInstructorsRoute: AuthenticatedInstructorsRoute,
   AuthenticatedPathsRoute: AuthenticatedPathsRoute,
+  AuthenticatedPaymentRoute: AuthenticatedPaymentRoute,
   AuthenticatedPracticeRoute: AuthenticatedPracticeRoute,
   AuthenticatedPricingRoute: AuthenticatedPricingRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
@@ -256,13 +277,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
