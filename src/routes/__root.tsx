@@ -75,18 +75,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "codehub" },
+      { title: "NYCODEHUB" },
       { name: "description", content: "Hands-on courses and a browser-based practice lab for coding and software engineering." },
-      { name: "author", content: "byteforge" },
-      { property: "og:title", content: "codehub" },
+      { name: "author", content: "NYCODEHUB" },
+      { property: "og:title", content: "NYCODEHUB" },
       { property: "og:description", content: "Hands-on courses and a browser-based practice lab for coding and software engineering." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
-      { name: "twitter:title", content: "codehub" },
+      { name: "twitter:title", content: "NYCODEHUB" },
       { name: "twitter:description", content: "Hands-on courses and a browser-based practice lab for coding and software engineering." },
-      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/14005bb4-b35f-498d-88e2-d9163f5af62d" },
-      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/14005bb4-b35f-498d-88e2-d9163f5af62d" },
     ],
     links: [
       {

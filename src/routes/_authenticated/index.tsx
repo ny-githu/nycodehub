@@ -5,9 +5,9 @@ import { Code2, Terminal, Cpu, GitBranch, Database, Sparkles, ArrowRight, Play }
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
     meta: [
-      { title: "byteforge — Learn coding by doing, in your browser" },
+      { title: "NYCODEHUB — Learn coding by doing, in your browser" },
       { name: "description", content: "Hands-on courses and a TryHackMe-style practice lab for coding, software engineering, DevOps, and more." },
-      { property: "og:title", content: "byteforge — Learn coding by doing" },
+      { property: "og:title", content: "NYCODEHUB — Learn coding by doing" },
       { property: "og:description", content: "Hands-on courses and a TryHackMe-style practice lab for software engineering." },
     ],
   }),
@@ -39,7 +39,7 @@ function Home() {
               Learn to code by <span className="text-gradient">breaking things</span>, not watching videos.
             </h1>
             <p className="mt-6 text-lg text-muted-foreground max-w-2xl">
-              byteforge is a hands-on platform for coding and software engineering.
+              NYCODEHUB is a hands-on platform for coding and software engineering.
               Real terminals. Real codebases. Real bugs to hunt — all in your browser.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
@@ -90,8 +90,8 @@ function Home() {
             <h2 className="text-3xl md:text-4xl font-bold">Pick your track</h2>
             <p className="mt-2 text-muted-foreground">Curated paths from beginner to senior engineer.</p>
           </div>
-          <Link to="/paths" className="text-sm text-primary-glow hover:underline inline-flex items-center gap-1">
-            All learning paths <ArrowRight className="size-4" />
+          <Link to="/courses" className="text-sm text-primary-glow hover:underline inline-flex items-center gap-1">
+            All courses <ArrowRight className="size-4" />
           </Link>
         </div>
         <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
@@ -118,7 +118,7 @@ function Home() {
             <div>
               <h3 className="text-2xl md:text-3xl font-bold">Stop reading docs. Start shipping.</h3>
               <p className="mt-3 text-muted-foreground max-w-xl">
-                Every byteforge course pairs short videos with a live environment. Code, run, break, fix — repeat.
+                Every NYCODEHUB course pairs short videos with a live environment. Code, run, break, fix — repeat.
               </p>
             </div>
             <Link to="/practice" className="justify-self-start md:justify-self-end inline-flex items-center gap-2 px-5 py-3 rounded-md bg-gradient-primary text-primary-foreground font-medium shadow-glow">

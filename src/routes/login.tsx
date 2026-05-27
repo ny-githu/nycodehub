@@ -11,8 +11,8 @@ export const Route = createFileRoute("/login")({
   }),
   head: () => ({
     meta: [
-      { title: "Sign in — byteforge" },
-      { name: "description", content: "Sign in to your byteforge account." },
+      { title: "Sign in — NYCODEHUB" },
+      { name: "description", content: "Sign in to your NYCODEHUB account." },
     ],
   }),
   component: LoginPage,
@@ -53,7 +53,7 @@ function LoginPage() {
             <span className="grid place-items-center size-9 rounded-md bg-gradient-primary shadow-glow">
               <Terminal className="size-4 text-primary-foreground" />
             </span>
-            byteforge<span className="text-primary-glow">_</span>
+            NYCODEHUB<span className="text-primary-glow">_</span>
           </Link>
           <h1 className="mt-6 text-2xl font-bold">Sign in</h1>
           <p className="mt-1 text-sm text-muted-foreground font-mono">
