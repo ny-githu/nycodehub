@@ -38,36 +38,10 @@ export const adminCreateUser = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
 
     if (data.role !== "learner" && created.user) {
-      // handle_new_user already inserts learner; upgrade if needed
       await supabaseAdmin.from("user_roles").insert({ user_id: created.user.id, role: data.role });
     }
 
     return { id: created.user?.id, email: created.user?.email };
-  });
-
-export const adminListUsers = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    await assertAdmin(context.userId);
-    const { data, error } = await supabaseAdmin.auth.admin.listUsers({ perPage: 200 });
-    if (error) throw new Error(error.message);
-
-    const ids = data.users.map((u) => u.id);
-    const { data: roles } = await supabaseAdmin.from("user_roles").select("user_id, role").in("user_id", ids);
-    const roleMap = new Map<string, string[]>();
-    roles?.forEach((r) => {
-      const arr = roleMap.get(r.user_id) ?? [];
-      arr.push(r.role);
-      roleMap.set(r.user_id, arr);
-    });
-
-    return data.users.map((u) => ({
-      id: u.id,
-      email: u.email,
-      created_at: u.created_at,
-      last_sign_in_at: u.last_sign_in_at,
-      roles: roleMap.get(u.id) ?? [],
-    }));
   });
 
 export const adminDeleteUser = createServerFn({ method: "POST" })
@@ -77,6 +51,17 @@ export const adminDeleteUser = createServerFn({ method: "POST" })
     await assertAdmin(context.userId);
     if (data.userId === context.userId) throw new Error("Cannot delete yourself");
     const { error } = await supabaseAdmin.auth.admin.deleteUser(data.userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const adminSetUserDisabled = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ userId: z.string().uuid(), disabled: z.boolean() }).parse(input))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
+    if (data.userId === context.userId) throw new Error("Cannot disable yourself");
+    const { error } = await supabaseAdmin.from("profiles").update({ disabled: data.disabled }).eq("id", data.userId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

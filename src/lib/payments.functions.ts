@@ -207,10 +207,10 @@ export const adminUsersOverview = createServerFn({ method: "GET" })
     const { data: users } = await supabaseAdmin.auth.admin.listUsers({ perPage: 200 });
     const ids = users?.users.map((u) => u.id) ?? [];
     const [{ data: profiles }, { data: roles }] = await Promise.all([
-      supabaseAdmin.from("profiles").select("id, expires_at").in("id", ids),
+      supabaseAdmin.from("profiles").select("id, expires_at, disabled").in("id", ids),
       supabaseAdmin.from("user_roles").select("user_id, role").in("user_id", ids),
     ]);
-    const pMap = new Map((profiles ?? []).map((p) => [p.id, p.expires_at as string | null]));
+    const pMap = new Map((profiles ?? []).map((p) => [p.id, { expires_at: p.expires_at as string | null, disabled: !!p.disabled }]));
     const rMap = new Map<string, string[]>();
     (roles ?? []).forEach((r) => {
       const arr = rMap.get(r.user_id) ?? [];
@@ -219,14 +219,17 @@ export const adminUsersOverview = createServerFn({ method: "GET" })
     });
     const now = new Date();
     return (users?.users ?? []).map((u) => {
-      const exp = pMap.get(u.id) ?? null;
+      const prof = pMap.get(u.id) ?? { expires_at: null, disabled: false };
       const isAdmin = (rMap.get(u.id) ?? []).includes("admin");
-      const active = isAdmin || (!!exp && new Date(exp) > now);
+      const active = isAdmin || (!prof.disabled && !!prof.expires_at && new Date(prof.expires_at) > now);
       return {
         id: u.id, email: u.email, created_at: u.created_at,
         last_sign_in_at: u.last_sign_in_at,
         roles: rMap.get(u.id) ?? [],
-        expires_at: exp, active, is_admin: isAdmin,
+        expires_at: prof.expires_at,
+        disabled: prof.disabled,
+        active, is_admin: isAdmin,
       };
     });
   });
+

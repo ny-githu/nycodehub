@@ -8,6 +8,7 @@ type AuthCtx = {
   loading: boolean;
   isAdmin: boolean;
   expiresAt: string | null;
+  disabled: boolean;
   expired: boolean;
   refreshExpiry: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -19,6 +20,7 @@ const Ctx = createContext<AuthCtx>({
   loading: true,
   isAdmin: false,
   expiresAt: null,
+  disabled: false,
   expired: false,
   refreshExpiry: async () => {},
   signOut: async () => {},
@@ -29,6 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
+  const [disabled, setDisabled] = useState(false);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
@@ -45,22 +48,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function loadAccount(uid: string) {
     const [{ data: role }, { data: profile }] = await Promise.all([
       supabase.from("user_roles").select("role").eq("user_id", uid).eq("role", "admin").maybeSingle(),
-      supabase.from("profiles").select("expires_at").eq("id", uid).maybeSingle(),
+      supabase.from("profiles").select("expires_at, disabled").eq("id", uid).maybeSingle(),
     ]);
     setIsAdmin(!!role);
     setExpiresAt((profile?.expires_at as string | null) ?? null);
+    setDisabled(!!profile?.disabled);
   }
 
   useEffect(() => {
     if (!session?.user) {
       setIsAdmin(false);
       setExpiresAt(null);
+      setDisabled(false);
       return;
     }
     loadAccount(session.user.id);
   }, [session?.user?.id]);
 
-  const expired = !isAdmin && !!expiresAt && new Date(expiresAt) < new Date();
+  const expired = !isAdmin && (disabled || (!!expiresAt && new Date(expiresAt) < new Date()));
 
   return (
     <Ctx.Provider
@@ -70,6 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loading,
         isAdmin,
         expiresAt,
+        disabled,
         expired,
         refreshExpiry: async () => { if (session?.user) await loadAccount(session.user.id); },
         signOut: async () => { await supabase.auth.signOut(); },
