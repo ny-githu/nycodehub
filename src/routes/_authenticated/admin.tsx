@@ -4,14 +4,16 @@ import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { adminCreateUser, adminDeleteUser } from "@/lib/admin.functions";
+import { adminCreateUser, adminDeleteUser, adminSetUserDisabled } from "@/lib/admin.functions";
 import {
   adminListPlans, adminUpsertPlan, adminDeletePlan,
   adminUpdateSettings, adminUsersOverview,
   adminListPaymentRequests, adminReviewPayment, adminExtendUser, adminSetUserExpiry,
   getPaymentPage,
 } from "@/lib/payments.functions";
-import { Loader2, Trash2, ShieldCheck, UserPlus, CreditCard, Settings as SettingsIcon, Users, Receipt, CheckCircle2, XCircle, Clock, Pencil, Plus, Calendar } from "lucide-react";
+import { listAdminCourses } from "@/lib/courses.functions";
+import { adminListCourseVideos, adminCreateCourseVideo, adminDeleteCourseVideo } from "@/lib/course-admin.functions";
+import { Loader2, Trash2, ShieldCheck, UserPlus, CreditCard, Settings as SettingsIcon, Users, Receipt, CheckCircle2, XCircle, Clock, Pencil, Plus, Calendar, Search, Lock, Unlock, Video, Upload, Link2 } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/admin")({
@@ -26,7 +28,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
 });
 
-type Tab = "users" | "plans" | "settings" | "payments";
+type Tab = "users" | "plans" | "settings" | "payments" | "courses";
 
 function AdminPage() {
   const [tab, setTab] = useState<Tab>("users");
