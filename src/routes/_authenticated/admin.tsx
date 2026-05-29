@@ -82,6 +82,8 @@ function UsersTab() {
   const deleteFn = useServerFn(adminDeleteUser);
   const extendFn = useServerFn(adminExtendUser);
   const setExpiryFn = useServerFn(adminSetUserExpiry);
+  const setDisabledFn = useServerFn(adminSetUserDisabled);
+  const [search, setSearch] = useState("");
 
   const { data: users, isLoading } = useQuery({ queryKey: ["admin-overview"], queryFn: () => overviewFn() });
 
