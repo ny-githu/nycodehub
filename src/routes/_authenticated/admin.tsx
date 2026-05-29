@@ -162,6 +162,16 @@ function UsersTab() {
         <Stat label="Disabled (unpaid)" value={inactive.length} tone="destructive" />
       </div>
 
+      <div className="mb-3 relative">
+        <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search by email…"
+          className="w-full pl-9 pr-3 py-2 rounded-md bg-surface border border-border text-sm font-mono"
+        />
+      </div>
+
       {isLoading ? (
         <div className="text-sm text-muted-foreground flex items-center gap-2"><Loader2 className="size-4 animate-spin" /> loading…</div>
       ) : (
@@ -178,17 +188,19 @@ function UsersTab() {
                 </tr>
               </thead>
               <tbody>
-                {(users ?? []).map((u) => (
+                {filteredUsers.map((u) => (
                   <tr key={u.id} className="border-t border-border/40">
                     <td className="p-3 font-mono">{u.email}</td>
                     <td className="p-3 font-mono text-xs text-muted-foreground">{u.roles.join(", ") || "—"}</td>
                     <td className="p-3">
                       {u.is_admin ? (
-                        <span className="text-xs px-2 py-0.5 rounded bg-primary/20 text-primary-glow">admin (always active)</span>
+                        <span className="text-xs px-2 py-0.5 rounded bg-primary/20 text-primary-glow">admin</span>
+                      ) : u.disabled ? (
+                        <span className="text-xs px-2 py-0.5 rounded bg-destructive/20 text-destructive">disabled</span>
                       ) : u.active ? (
                         <span className="text-xs px-2 py-0.5 rounded bg-success/20 text-success">active</span>
                       ) : (
-                        <span className="text-xs px-2 py-0.5 rounded bg-destructive/20 text-destructive">disabled</span>
+                        <span className="text-xs px-2 py-0.5 rounded bg-chart-4/20 text-chart-4">expired</span>
                       )}
                     </td>
                     <td className="p-3 font-mono text-xs">
@@ -196,6 +208,15 @@ function UsersTab() {
                     </td>
                     <td className="p-3 text-right">
                       <div className="flex items-center justify-end gap-1">
+                        {!u.is_admin && (
+                          <button
+                            onClick={() => disableMut.mutate({ userId: u.id, disabled: !u.disabled })}
+                            className={`px-2 py-1 text-xs rounded inline-flex items-center gap-1 ${u.disabled ? "bg-success/20 text-success hover:bg-success/30" : "bg-chart-4/20 text-chart-4 hover:bg-chart-4/30"}`}
+                            title={u.disabled ? "Enable" : "Disable"}
+                          >
+                            {u.disabled ? <><Unlock className="size-3" /> Enable</> : <><Lock className="size-3" /> Disable</>}
+                          </button>
+                        )}
                         <ExtendButton onExtend={(days) => extendMut.mutate({ userId: u.id, days })} />
                         <button
                           onClick={() => {
