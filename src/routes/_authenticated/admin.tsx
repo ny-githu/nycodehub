@@ -4,14 +4,16 @@ import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { adminCreateUser, adminDeleteUser } from "@/lib/admin.functions";
+import { adminCreateUser, adminDeleteUser, adminSetUserDisabled } from "@/lib/admin.functions";
 import {
   adminListPlans, adminUpsertPlan, adminDeletePlan,
   adminUpdateSettings, adminUsersOverview,
   adminListPaymentRequests, adminReviewPayment, adminExtendUser, adminSetUserExpiry,
   getPaymentPage,
 } from "@/lib/payments.functions";
-import { Loader2, Trash2, ShieldCheck, UserPlus, CreditCard, Settings as SettingsIcon, Users, Receipt, CheckCircle2, XCircle, Clock, Pencil, Plus, Calendar } from "lucide-react";
+import { listAdminCourses } from "@/lib/courses.functions";
+import { adminListCourseVideos, adminCreateCourseVideo, adminDeleteCourseVideo } from "@/lib/course-admin.functions";
+import { Loader2, Trash2, ShieldCheck, UserPlus, CreditCard, Settings as SettingsIcon, Users, Receipt, CheckCircle2, XCircle, Clock, Pencil, Plus, Calendar, Search, Lock, Unlock, Video, Upload, Link2 } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/admin")({
@@ -26,7 +28,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
 });
 
-type Tab = "users" | "plans" | "settings" | "payments";
+type Tab = "users" | "plans" | "settings" | "payments" | "courses";
 
 function AdminPage() {
   const [tab, setTab] = useState<Tab>("users");
@@ -46,6 +48,7 @@ function AdminPage() {
         <div className="flex flex-wrap gap-1 mb-6 border-b border-border">
           {([
             ["users", Users, "Users & access"],
+            ["courses", Video, "Courses & videos"],
             ["payments", Receipt, "Payments"],
             ["plans", CreditCard, "Plans"],
             ["settings", SettingsIcon, "Payment settings"],
@@ -63,6 +66,7 @@ function AdminPage() {
         </div>
 
         {tab === "users" && <UsersTab />}
+        {tab === "courses" && <CoursesTab />}
         {tab === "payments" && <PaymentsTab />}
         {tab === "plans" && <PlansTab />}
         {tab === "settings" && <SettingsTab />}
@@ -78,6 +82,8 @@ function UsersTab() {
   const deleteFn = useServerFn(adminDeleteUser);
   const extendFn = useServerFn(adminExtendUser);
   const setExpiryFn = useServerFn(adminSetUserExpiry);
+  const setDisabledFn = useServerFn(adminSetUserDisabled);
+  const [search, setSearch] = useState("");
 
   const { data: users, isLoading } = useQuery({ queryKey: ["admin-overview"], queryFn: () => overviewFn() });
 
@@ -101,9 +107,16 @@ function UsersTab() {
     onSuccess: () => { toast.success("Expiry set"); qc.invalidateQueries({ queryKey: ["admin-overview"] }); },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
   });
+  const disableMut = useMutation({
+    mutationFn: (v: { userId: string; disabled: boolean }) => setDisabledFn({ data: v }),
+    onSuccess: (_d, v) => { toast.success(v.disabled ? "Disabled" : "Enabled"); qc.invalidateQueries({ queryKey: ["admin-overview"] }); },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
+  });
 
   const [form, setForm] = useState({ email: "", password: "", displayName: "", role: "learner" as "admin" | "instructor" | "learner", days: 30 });
 
+  const q = search.trim().toLowerCase();
+  const filteredUsers = (users ?? []).filter((u) => !q || (u.email ?? "").toLowerCase().includes(q));
   const active = (users ?? []).filter((u) => u.active);
   const inactive = (users ?? []).filter((u) => !u.active);
 
@@ -149,6 +162,16 @@ function UsersTab() {
         <Stat label="Disabled (unpaid)" value={inactive.length} tone="destructive" />
       </div>
 
+      <div className="mb-3 relative">
+        <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search by email…"
+          className="w-full pl-9 pr-3 py-2 rounded-md bg-surface border border-border text-sm font-mono"
+        />
+      </div>
+
       {isLoading ? (
         <div className="text-sm text-muted-foreground flex items-center gap-2"><Loader2 className="size-4 animate-spin" /> loading…</div>
       ) : (
@@ -165,17 +188,19 @@ function UsersTab() {
                 </tr>
               </thead>
               <tbody>
-                {(users ?? []).map((u) => (
+                {filteredUsers.map((u) => (
                   <tr key={u.id} className="border-t border-border/40">
                     <td className="p-3 font-mono">{u.email}</td>
                     <td className="p-3 font-mono text-xs text-muted-foreground">{u.roles.join(", ") || "—"}</td>
                     <td className="p-3">
                       {u.is_admin ? (
-                        <span className="text-xs px-2 py-0.5 rounded bg-primary/20 text-primary-glow">admin (always active)</span>
+                        <span className="text-xs px-2 py-0.5 rounded bg-primary/20 text-primary-glow">admin</span>
+                      ) : u.disabled ? (
+                        <span className="text-xs px-2 py-0.5 rounded bg-destructive/20 text-destructive">disabled</span>
                       ) : u.active ? (
                         <span className="text-xs px-2 py-0.5 rounded bg-success/20 text-success">active</span>
                       ) : (
-                        <span className="text-xs px-2 py-0.5 rounded bg-destructive/20 text-destructive">disabled</span>
+                        <span className="text-xs px-2 py-0.5 rounded bg-chart-4/20 text-chart-4">expired</span>
                       )}
                     </td>
                     <td className="p-3 font-mono text-xs">
@@ -183,6 +208,15 @@ function UsersTab() {
                     </td>
                     <td className="p-3 text-right">
                       <div className="flex items-center justify-end gap-1">
+                        {!u.is_admin && (
+                          <button
+                            onClick={() => disableMut.mutate({ userId: u.id, disabled: !u.disabled })}
+                            className={`px-2 py-1 text-xs rounded inline-flex items-center gap-1 ${u.disabled ? "bg-success/20 text-success hover:bg-success/30" : "bg-chart-4/20 text-chart-4 hover:bg-chart-4/30"}`}
+                            title={u.disabled ? "Enable" : "Disable"}
+                          >
+                            {u.disabled ? <><Unlock className="size-3" /> Enable</> : <><Lock className="size-3" /> Disable</>}
+                          </button>
+                        )}
                         <ExtendButton onExtend={(days) => extendMut.mutate({ userId: u.id, days })} />
                         <button
                           onClick={() => {
@@ -437,5 +471,144 @@ function SettingsTab() {
         </button>
       </form>
     </section>
+  );
+}
+
+// ============= Courses & Videos =============
+
+function CoursesTab() {
+  const listFn = useServerFn(listAdminCourses);
+  const { data: courses } = useQuery({ queryKey: ["admin-courses"], queryFn: () => listFn() });
+  const [selected, setSelected] = useState<string | null>(null);
+  const current = (courses ?? []).find((c) => c.id === selected) ?? courses?.[0];
+
+  return (
+    <div className="grid lg:grid-cols-[260px_1fr] gap-4">
+      <aside className="rounded-xl border border-border bg-gradient-card p-3 max-h-[70vh] overflow-y-auto">
+        <h3 className="text-xs font-mono text-muted-foreground mb-2">Courses</h3>
+        <div className="space-y-1">
+          {(courses ?? []).map((c) => (
+            <button
+              key={c.id}
+              onClick={() => setSelected(c.id)}
+              className={`w-full text-left px-2 py-2 text-sm rounded transition ${
+                (current?.id === c.id) ? "bg-primary/15 text-foreground" : "text-muted-foreground hover:bg-surface"
+              }`}
+            >
+              <div className="font-semibold">{c.title}</div>
+              <div className="text-[10px] font-mono opacity-70">{c.track ?? "General"}</div>
+            </button>
+          ))}
+        </div>
+      </aside>
+      {current ? <VideosPanel courseId={current.id} title={current.title} /> : <div className="text-sm text-muted-foreground">No course selected.</div>}
+    </div>
+  );
+}
+
+function VideosPanel({ courseId, title }: { courseId: string; title: string }) {
+  const qc = useQueryClient();
+  const listFn = useServerFn(adminListCourseVideos);
+  const createFn = useServerFn(adminCreateCourseVideo);
+  const deleteFn = useServerFn(adminDeleteCourseVideo);
+  const { data: videos, isLoading } = useQuery({ queryKey: ["admin-course-videos", courseId], queryFn: () => listFn({ data: { courseId } }) });
+
+  const [mode, setMode] = useState<"url" | "upload">("url");
+  const [form, setForm] = useState({ topic: "Intro", title: "", description: "", videoUrl: "", sortOrder: 0 });
+  const [file, setFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const createMut = useMutation({
+    mutationFn: (v: { topic: string; title: string; description: string; videoUrl?: string; storagePath?: string; sortOrder: number }) =>
+      createFn({ data: { courseId, ...v } }),
+    onSuccess: () => {
+      toast.success("Video added");
+      qc.invalidateQueries({ queryKey: ["admin-course-videos", courseId] });
+      setForm({ topic: form.topic, title: "", description: "", videoUrl: "", sortOrder: form.sortOrder + 1 });
+      setFile(null);
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
+  });
+  const deleteMut = useMutation({
+    mutationFn: (id: string) => deleteFn({ data: { id } }),
+    onSuccess: () => { toast.success("Deleted"); qc.invalidateQueries({ queryKey: ["admin-course-videos", courseId] }); },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
+  });
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.title) { toast.error("Title required"); return; }
+    if (mode === "url") {
+      if (!form.videoUrl) { toast.error("URL required"); return; }
+      createMut.mutate({ ...form });
+    } else {
+      if (!file) { toast.error("Pick a file"); return; }
+      setUploading(true);
+      try {
+        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+        const path = `${courseId}/${Date.now()}-${safeName}`;
+        const { error } = await supabase.storage.from("course-videos").upload(path, file, { upsert: false, contentType: file.type });
+        if (error) throw error;
+        createMut.mutate({ ...form, storagePath: path });
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Upload failed");
+      } finally { setUploading(false); }
+    }
+  }
+
+  return (
+    <div>
+      <section className="rounded-xl border border-border bg-gradient-card p-5 mb-4">
+        <h2 className="text-base font-semibold flex items-center gap-2"><Video className="size-4" /> {title} — add video</h2>
+        <div className="mt-3 inline-flex rounded-md border border-border bg-surface overflow-hidden text-xs">
+          <button type="button" onClick={() => setMode("url")} className={`px-3 py-1.5 inline-flex items-center gap-1 ${mode === "url" ? "bg-gradient-primary text-primary-foreground" : "text-muted-foreground"}`}>
+            <Link2 className="size-3" /> URL
+          </button>
+          <button type="button" onClick={() => setMode("upload")} className={`px-3 py-1.5 inline-flex items-center gap-1 ${mode === "upload" ? "bg-gradient-primary text-primary-foreground" : "text-muted-foreground"}`}>
+            <Upload className="size-3" /> Upload
+          </button>
+        </div>
+        <form onSubmit={submit} className="mt-3 grid sm:grid-cols-2 gap-3">
+          <input required placeholder="Topic (e.g. Variables)" value={form.topic} onChange={(e) => setForm({ ...form, topic: e.target.value })} className="px-3 py-2 rounded bg-surface border border-border text-sm" />
+          <input required placeholder="Video title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="px-3 py-2 rounded bg-surface border border-border text-sm" />
+          {mode === "url" ? (
+            <input required type="url" placeholder="https://youtube.com/watch?v=… or .mp4" value={form.videoUrl} onChange={(e) => setForm({ ...form, videoUrl: e.target.value })} className="px-3 py-2 rounded bg-surface border border-border text-sm sm:col-span-2 font-mono" />
+          ) : (
+            <input required type="file" accept="video/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="px-3 py-2 rounded bg-surface border border-border text-sm sm:col-span-2" />
+          )}
+          <textarea placeholder="Description (optional)" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={2} className="px-3 py-2 rounded bg-surface border border-border text-sm sm:col-span-2" />
+          <input type="number" placeholder="Sort order" value={form.sortOrder} onChange={(e) => setForm({ ...form, sortOrder: Number(e.target.value) })} className="px-3 py-2 rounded bg-surface border border-border text-sm" />
+          <button type="submit" disabled={uploading || createMut.isPending} className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded bg-gradient-primary text-primary-foreground text-sm font-medium shadow-glow disabled:opacity-60">
+            {(uploading || createMut.isPending) && <Loader2 className="size-4 animate-spin" />} Add video
+          </button>
+        </form>
+      </section>
+
+      {isLoading ? (
+        <div className="text-sm text-muted-foreground flex items-center gap-2"><Loader2 className="size-4 animate-spin" /> loading…</div>
+      ) : (
+        <div className="space-y-2">
+          {(videos ?? []).length === 0 ? (
+            <p className="text-sm text-muted-foreground p-4 border border-dashed border-border rounded-lg text-center">No videos yet.</p>
+          ) : (
+            (videos ?? []).map((v) => (
+              <div key={v.id} className="rounded-lg border border-border bg-gradient-card p-3 flex items-center gap-3 animate-fade-in">
+                <span className="px-2 py-0.5 text-[10px] font-mono rounded bg-surface text-primary-glow">{v.topic}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-sm truncate">{v.title}</div>
+                  <div className="text-[11px] font-mono text-muted-foreground truncate">
+                    {v.video_url || v.storage_path || "—"}
+                  </div>
+                </div>
+                <span className="text-[10px] font-mono text-muted-foreground">#{v.sort_order}</span>
+                <button onClick={() => { if (confirm(`Delete "${v.title}"?`)) deleteMut.mutate(v.id); }} className="p-1.5 text-destructive hover:bg-destructive/10 rounded">
+                  <Trash2 className="size-3.5" />
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+    </div>
   );
 }

@@ -1,17 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Layout } from "@/components/site/Layout";
-import { Clock, Layers, BookOpen, Loader2 } from "lucide-react";
+import { Clock, Layers, BookOpen, Loader2, PlayCircle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useMemo } from "react";
+import { t } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/courses")({
   head: () => ({
     meta: [
-      { title: "Courses — byteforge" },
-      { name: "description", content: "Hands-on courses in coding, web development, DevOps, and AI engineering." },
-      { property: "og:title", content: "Courses — byteforge" },
-      { property: "og:description", content: "Browse hands-on coding and software engineering courses." },
+      { title: "Amasomo — NYCODEHUB" },
+      { name: "description", content: "Amasomo ya NYCODEHUB - iga gukora porogaramu." },
     ],
   }),
   component: Courses,
@@ -33,10 +32,7 @@ function Courses() {
   const { data, isLoading } = useQuery({
     queryKey: ["courses"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("courses")
-        .select("*")
-        .order("created_at", { ascending: true });
+      const { data, error } = await supabase.from("courses").select("*").order("created_at", { ascending: true });
       if (error) throw error;
       return data as Course[];
     },
@@ -51,18 +47,16 @@ function Courses() {
 
   return (
     <Layout>
-      <section className="container mx-auto max-w-7xl px-6 pt-16 pb-10">
-        <span className="font-mono text-xs text-primary-glow">/ courses</span>
-        <h1 className="mt-3 text-4xl md:text-5xl font-bold">Catalog</h1>
-        <p className="mt-3 text-muted-foreground max-w-2xl">
-          {courses.length} hands-on courses across the stack. Every lesson runs in a real environment.
-        </p>
+      <section className="container mx-auto max-w-7xl px-6 pt-16 pb-10 animate-fade-in">
+        <span className="font-mono text-xs text-primary-glow">{t.courses_label}</span>
+        <h1 className="mt-3 text-4xl md:text-5xl font-bold">{t.courses_h1}</h1>
+        <p className="mt-3 text-muted-foreground max-w-2xl">{t.courses_lead}</p>
         <div className="mt-8 flex flex-wrap gap-2">
           {tracks.map((f) => (
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={`px-3 py-1.5 text-sm rounded-full border transition ${
+              className={`px-3 py-1.5 text-sm rounded-full border transition hover-scale ${
                 filter === f
                   ? "bg-gradient-primary text-primary-foreground border-transparent"
                   : "border-border text-muted-foreground hover:text-foreground hover:bg-surface"
@@ -81,11 +75,13 @@ function Courses() {
           </div>
         ) : (
           <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-            {filtered.map((c) => (
+            {filtered.map((c, i) => (
               <Link
                 key={c.id}
-                to="/practice"
-                className="group block bg-gradient-card border border-border rounded-xl p-6 hover:border-primary/50 transition"
+                to="/courses/$slug"
+                params={{ slug: c.slug }}
+                className="group block bg-gradient-card border border-border rounded-xl p-6 hover:border-primary/50 transition hover-scale animate-fade-in"
+                style={{ animationDelay: `${i * 60}ms` }}
               >
                 <div className="flex items-center justify-between">
                   <span className="px-2 py-1 text-[11px] font-mono rounded bg-surface border border-border text-primary-glow">
@@ -98,7 +94,10 @@ function Courses() {
                 <div className="mt-6 flex items-center gap-5 text-xs text-muted-foreground font-mono">
                   <span className="flex items-center gap-1"><Clock className="size-3.5" /> {Math.round(c.duration_minutes / 60)}h</span>
                   <span className="flex items-center gap-1"><Layers className="size-3.5" /> {c.level}</span>
-                  <span className="flex items-center gap-1"><BookOpen className="size-3.5" /> lab</span>
+                  <span className="flex items-center gap-1"><PlayCircle className="size-3.5" /> {t.courses_open}</span>
+                </div>
+                <div className="mt-3 inline-flex items-center gap-1 text-xs text-primary-glow opacity-0 group-hover:opacity-100 transition">
+                  <BookOpen className="size-3" /> {t.courses_topics} →
                 </div>
               </Link>
             ))}
