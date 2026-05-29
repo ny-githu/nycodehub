@@ -48,6 +48,7 @@ function AdminPage() {
         <div className="flex flex-wrap gap-1 mb-6 border-b border-border">
           {([
             ["users", Users, "Users & access"],
+            ["courses", Video, "Courses & videos"],
             ["payments", Receipt, "Payments"],
             ["plans", CreditCard, "Plans"],
             ["settings", SettingsIcon, "Payment settings"],
@@ -65,6 +66,7 @@ function AdminPage() {
         </div>
 
         {tab === "users" && <UsersTab />}
+        {tab === "courses" && <CoursesTab />}
         {tab === "payments" && <PaymentsTab />}
         {tab === "plans" && <PlansTab />}
         {tab === "settings" && <SettingsTab />}
