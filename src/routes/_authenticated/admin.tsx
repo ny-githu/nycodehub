@@ -107,9 +107,16 @@ function UsersTab() {
     onSuccess: () => { toast.success("Expiry set"); qc.invalidateQueries({ queryKey: ["admin-overview"] }); },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
   });
+  const disableMut = useMutation({
+    mutationFn: (v: { userId: string; disabled: boolean }) => setDisabledFn({ data: v }),
+    onSuccess: (_d, v) => { toast.success(v.disabled ? "Disabled" : "Enabled"); qc.invalidateQueries({ queryKey: ["admin-overview"] }); },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
+  });
 
   const [form, setForm] = useState({ email: "", password: "", displayName: "", role: "learner" as "admin" | "instructor" | "learner", days: 30 });
 
+  const q = search.trim().toLowerCase();
+  const filteredUsers = (users ?? []).filter((u) => !q || (u.email ?? "").toLowerCase().includes(q));
   const active = (users ?? []).filter((u) => u.active);
   const inactive = (users ?? []).filter((u) => !u.active);
 
