@@ -13,8 +13,9 @@ import {
 } from "@/lib/payments.functions";
 import { listAdminCourses } from "@/lib/courses.functions";
 import { adminListCourseVideos, adminCreateCourseVideo, adminDeleteCourseVideo } from "@/lib/course-admin.functions";
-import { Loader2, Trash2, ShieldCheck, UserPlus, CreditCard, Settings as SettingsIcon, Users, Receipt, CheckCircle2, XCircle, Clock, Pencil, Plus, Calendar, Search, Lock, Unlock, Video, Upload, Link2 } from "lucide-react";
+import { Loader2, Trash2, ShieldCheck, UserPlus, CreditCard, Settings as SettingsIcon, Users, Receipt, CheckCircle2, XCircle, Clock, Pencil, Plus, Calendar, Search, Lock, Unlock, Video, Upload, Link2, PlayCircle } from "lucide-react";
 import { toast } from "sonner";
+import { t } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   beforeLoad: async () => {
@@ -34,24 +35,24 @@ function AdminPage() {
   const [tab, setTab] = useState<Tab>("users");
   return (
     <Layout>
-      <div className="container mx-auto max-w-6xl px-6 py-10">
+      <div className="container mx-auto max-w-6xl px-6 py-10 animate-fade-in">
         <div className="flex items-center gap-3 mb-6">
-          <span className="grid place-items-center size-11 rounded-md bg-gradient-primary shadow-glow">
+          <span className="grid place-items-center size-11 rounded-md bg-gradient-primary shadow-glow glow-pulse">
             <ShieldCheck className="size-5 text-primary-foreground" />
           </span>
           <div>
-            <h1 className="text-2xl font-bold">Admin console</h1>
-            <p className="text-sm text-muted-foreground font-mono">// NYCODEHUB management</p>
+            <h1 className="text-2xl font-bold">{t.admin_title}</h1>
+            <p className="text-sm text-muted-foreground font-mono">{t.admin_sub}</p>
           </div>
         </div>
 
         <div className="flex flex-wrap gap-1 mb-6 border-b border-border">
           {([
-            ["users", Users, "Users & access"],
-            ["courses", Video, "Courses & videos"],
-            ["payments", Receipt, "Payments"],
-            ["plans", CreditCard, "Plans"],
-            ["settings", SettingsIcon, "Payment settings"],
+            ["users", Users, t.admin_tab_users],
+            ["courses", Video, t.admin_tab_courses],
+            ["payments", Receipt, t.admin_tab_payments],
+            ["plans", CreditCard, t.admin_tab_plans],
+            ["settings", SettingsIcon, t.admin_tab_settings],
           ] as const).map(([id, Icon, label]) => (
             <button
               key={id}
