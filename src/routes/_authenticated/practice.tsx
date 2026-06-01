@@ -184,33 +184,9 @@ function Practice() {
 
         {/* Three columns: video | editor+output | helper */}
         <div className={`grid gap-3 ${helperOpen ? "lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_320px]" : "lg:grid-cols-2"} min-h-[80vh]`}>
-          {/* VIDEO column (sticks next to editor for easy copy/paste) */}
-          <div className="flex flex-col gap-2">
-            <div className="relative rounded-xl overflow-hidden border border-border bg-black aspect-video shadow-elevated animate-scale-in">
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-background to-accent/20 grid-bg opacity-80" />
-              <div className="absolute inset-0 grid place-items-center text-center px-4">
-                <div>
-                  <div className="text-xs font-mono text-primary-glow">● LIVE</div>
-                  <div className="mt-1 text-sm text-muted-foreground">Hitamo isomo muri "{t.nav_courses}" kugira ngo ubonere video iri hano.</div>
-                </div>
-              </div>
-            </div>
-            <div className="rounded-xl border border-border bg-gradient-card p-3">
-              <h3 className="font-semibold text-xs mb-2 flex items-center gap-2">
-                <span className="font-mono text-primary-glow">snippets</span>
-                <span className="text-[10px] text-muted-foreground">kanda kopa</span>
-              </h3>
-              <div className="space-y-1.5">
-                {lang.hints.map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => { navigator.clipboard.writeText(s); toast.success(t.copied); }}
-                    className="w-full text-left px-2.5 py-1.5 text-xs font-mono bg-surface hover:bg-surface/70 border border-border rounded truncate"
-                  >{s}</button>
-                ))}
-              </div>
-            </div>
-          </div>
+          {/* VIDEO column */}
+          <PracticeVideoColumn lang={lang} />
+
 
           {/* EDITOR + OUTPUT column */}
           <div className="flex flex-col gap-2">
