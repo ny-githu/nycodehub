@@ -124,7 +124,7 @@ function UsersTab() {
   return (
     <>
       <section className="rounded-xl border border-border bg-gradient-card p-6 mb-6">
-        <h2 className="text-lg font-semibold flex items-center gap-2"><UserPlus className="size-4" /> Create account</h2>
+        <h2 className="text-lg font-semibold flex items-center gap-2"><UserPlus className="size-4" /> {t.admin_create_account}</h2>
         <form
           className="mt-4 grid sm:grid-cols-2 lg:grid-cols-5 gap-3"
           onSubmit={(e) => {
@@ -139,28 +139,28 @@ function UsersTab() {
             });
           }}
         >
-          <input required type="email" placeholder="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="px-3 py-2 rounded-md bg-surface border border-border text-sm font-mono" />
-          <input required minLength={6} type="text" placeholder="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} className="px-3 py-2 rounded-md bg-surface border border-border text-sm font-mono" />
-          <input type="text" placeholder="display name" value={form.displayName} onChange={(e) => setForm({ ...form, displayName: e.target.value })} className="px-3 py-2 rounded-md bg-surface border border-border text-sm font-mono" />
+          <input required type="email" placeholder={t.email} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="px-3 py-2 rounded-md bg-surface border border-border text-sm font-mono" />
+          <input required minLength={6} type="text" placeholder={t.password} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} className="px-3 py-2 rounded-md bg-surface border border-border text-sm font-mono" />
+          <input type="text" placeholder={t.admin_form_displayname} value={form.displayName} onChange={(e) => setForm({ ...form, displayName: e.target.value })} className="px-3 py-2 rounded-md bg-surface border border-border text-sm font-mono" />
           <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as typeof form.role })} className="px-3 py-2 rounded-md bg-surface border border-border text-sm font-mono">
             <option value="learner">learner</option>
             <option value="instructor">instructor</option>
             <option value="admin">admin</option>
           </select>
           <div className="flex gap-2">
-            <input type="number" min={0} max={3650} value={form.days} onChange={(e) => setForm({ ...form, days: Number(e.target.value) })} className="w-20 px-3 py-2 rounded-md bg-surface border border-border text-sm font-mono" title="initial subscription days" />
+            <input type="number" min={0} max={3650} value={form.days} onChange={(e) => setForm({ ...form, days: Number(e.target.value) })} className="w-20 px-3 py-2 rounded-md bg-surface border border-border text-sm font-mono" title={t.admin_form_days} />
             <button type="submit" disabled={createMut.isPending} className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-gradient-primary text-primary-foreground font-medium shadow-glow disabled:opacity-60">
-              {createMut.isPending && <Loader2 className="size-4 animate-spin" />} Create
+              {createMut.isPending && <Loader2 className="size-4 animate-spin" />} {t.admin_btn_create}
             </button>
           </div>
         </form>
-        <p className="mt-2 text-xs text-muted-foreground font-mono">days = initial subscription length (0 = no access until you extend)</p>
+        <p className="mt-2 text-xs text-muted-foreground font-mono">{t.admin_form_days_hint}</p>
       </section>
 
       <div className="grid gap-4 mb-4 sm:grid-cols-3">
-        <Stat label="Total users" value={users?.length ?? 0} />
-        <Stat label="Active (paid)" value={active.length} tone="success" />
-        <Stat label="Disabled (unpaid)" value={inactive.length} tone="destructive" />
+        <Stat label={t.admin_users_total} value={users?.length ?? 0} />
+        <Stat label={t.admin_users_active} value={active.length} tone="success" />
+        <Stat label={t.admin_users_disabled} value={inactive.length} tone="destructive" />
       </div>
 
       <div className="mb-3 relative">
@@ -168,13 +168,13 @@ function UsersTab() {
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by email…"
+          placeholder={t.admin_search_email}
           className="w-full pl-9 pr-3 py-2 rounded-md bg-surface border border-border text-sm font-mono"
         />
       </div>
 
       {isLoading ? (
-        <div className="text-sm text-muted-foreground flex items-center gap-2"><Loader2 className="size-4 animate-spin" /> loading…</div>
+        <div className="text-sm text-muted-foreground flex items-center gap-2"><Loader2 className="size-4 animate-spin" /> {t.loading}</div>
       ) : (
         <div className="rounded-xl border border-border bg-gradient-card overflow-hidden">
           <div className="overflow-x-auto">
