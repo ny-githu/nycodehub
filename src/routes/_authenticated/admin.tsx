@@ -486,7 +486,7 @@ function CoursesTab() {
   return (
     <div className="grid lg:grid-cols-[260px_1fr] gap-4">
       <aside className="rounded-xl border border-border bg-gradient-card p-3 max-h-[70vh] overflow-y-auto">
-        <h3 className="text-xs font-mono text-muted-foreground mb-2">Courses</h3>
+        <h3 className="text-xs font-mono text-muted-foreground mb-2">{t.nav_courses}</h3>
         <div className="space-y-1">
           {(courses ?? []).map((c) => (
             <button
@@ -502,7 +502,7 @@ function CoursesTab() {
           ))}
         </div>
       </aside>
-      {current ? <VideosPanel courseId={current.id} title={current.title} /> : <div className="text-sm text-muted-foreground">No course selected.</div>}
+      {current ? <VideosPanel courseId={current.id} title={current.title} /> : <div className="text-sm text-muted-foreground">{t.admin_courses_select}</div>}
     </div>
   );
 }
