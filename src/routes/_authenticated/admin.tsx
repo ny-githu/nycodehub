@@ -347,40 +347,40 @@ function PlansTab() {
 
   const upsertMut = useMutation({
     mutationFn: (v: { id?: string; name: string; durationDays: number; amountRwf: number; active: boolean; sortOrder: number }) => upsertFn({ data: v }),
-    onSuccess: () => { toast.success("Saved"); qc.invalidateQueries({ queryKey: ["admin-plans"] }); },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
+    onSuccess: () => { toast.success(t.admin_saved); qc.invalidateQueries({ queryKey: ["admin-plans"] }); },
+    onError: (e) => toast.error(e instanceof Error ? e.message : t.admin_failed),
   });
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteFn({ data: { id } }),
-    onSuccess: () => { toast.success("Deleted"); qc.invalidateQueries({ queryKey: ["admin-plans"] }); },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
+    onSuccess: () => { toast.success(t.admin_done); qc.invalidateQueries({ queryKey: ["admin-plans"] }); },
+    onError: (e) => toast.error(e instanceof Error ? e.message : t.admin_failed),
   });
 
   const [draft, setDraft] = useState({ name: "", durationDays: 7, amountRwf: 2000, active: true, sortOrder: 99 });
 
-  if (isLoading) return <div className="text-sm text-muted-foreground flex items-center gap-2"><Loader2 className="size-4 animate-spin" /> loading…</div>;
+  if (isLoading) return <div className="text-sm text-muted-foreground flex items-center gap-2"><Loader2 className="size-4 animate-spin" /> {t.loading}</div>;
 
   return (
     <>
       <section className="rounded-xl border border-border bg-gradient-card p-6 mb-6">
-        <h2 className="text-lg font-semibold flex items-center gap-2"><Plus className="size-4" /> Add plan</h2>
+        <h2 className="text-lg font-semibold flex items-center gap-2"><Plus className="size-4" /> {t.admin_plans_add}</h2>
         <form
           className="mt-4 grid sm:grid-cols-5 gap-3"
           onSubmit={(e) => { e.preventDefault(); upsertMut.mutate(draft, { onSuccess: () => setDraft({ name: "", durationDays: 7, amountRwf: 2000, active: true, sortOrder: 99 }) }); }}
         >
-          <input required placeholder="name (e.g. Monthly)" value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} className="px-3 py-2 rounded-md bg-surface border border-border text-sm font-mono" />
-          <input required type="number" min={1} placeholder="days" value={draft.durationDays} onChange={(e) => setDraft({ ...draft, durationDays: Number(e.target.value) })} className="px-3 py-2 rounded-md bg-surface border border-border text-sm font-mono" />
-          <input required type="number" min={0} placeholder="amount RWF" value={draft.amountRwf} onChange={(e) => setDraft({ ...draft, amountRwf: Number(e.target.value) })} className="px-3 py-2 rounded-md bg-surface border border-border text-sm font-mono" />
+          <input required placeholder={t.admin_plans_name} value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} className="px-3 py-2 rounded-md bg-surface border border-border text-sm font-mono" />
+          <input required type="number" min={1} placeholder={t.admin_plans_days} value={draft.durationDays} onChange={(e) => setDraft({ ...draft, durationDays: Number(e.target.value) })} className="px-3 py-2 rounded-md bg-surface border border-border text-sm font-mono" />
+          <input required type="number" min={0} placeholder={t.admin_plans_amount} value={draft.amountRwf} onChange={(e) => setDraft({ ...draft, amountRwf: Number(e.target.value) })} className="px-3 py-2 rounded-md bg-surface border border-border text-sm font-mono" />
           <input type="number" placeholder="sort" value={draft.sortOrder} onChange={(e) => setDraft({ ...draft, sortOrder: Number(e.target.value) })} className="px-3 py-2 rounded-md bg-surface border border-border text-sm font-mono" />
           <button type="submit" disabled={upsertMut.isPending} className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-gradient-primary text-primary-foreground font-medium shadow-glow disabled:opacity-60">
-            {upsertMut.isPending && <Loader2 className="size-4 animate-spin" />} Add
+            {upsertMut.isPending && <Loader2 className="size-4 animate-spin" />} {t.add}
           </button>
         </form>
       </section>
 
       <div className="space-y-2">
         {(plans ?? []).map((p) => (
-          <PlanRow key={p.id} plan={p} onSave={(v) => upsertMut.mutate({ id: p.id, ...v })} onDelete={() => { if (confirm(`Delete ${p.name}?`)) deleteMut.mutate(p.id); }} />
+          <PlanRow key={p.id} plan={p} onSave={(v) => upsertMut.mutate({ id: p.id, ...v })} onDelete={() => { if (confirm(`${t.admin_btn_delete} ${p.name}?`)) deleteMut.mutate(p.id); }} />
         ))}
       </div>
     </>
@@ -398,19 +398,19 @@ function PlanRow({ plan, onSave, onDelete }: { plan: { id: string; name: string;
           <input value={v.name} onChange={(e) => setV({ ...v, name: e.target.value })} className="px-2 py-1.5 rounded bg-surface border border-border text-sm font-mono" />
           <input type="number" value={v.durationDays} onChange={(e) => setV({ ...v, durationDays: Number(e.target.value) })} className="px-2 py-1.5 rounded bg-surface border border-border text-sm font-mono" />
           <input type="number" value={v.amountRwf} onChange={(e) => setV({ ...v, amountRwf: Number(e.target.value) })} className="px-2 py-1.5 rounded bg-surface border border-border text-sm font-mono" />
-          <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={v.active} onChange={(e) => setV({ ...v, active: e.target.checked })} /> active</label>
+          <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={v.active} onChange={(e) => setV({ ...v, active: e.target.checked })} /> {t.admin_plans_active}</label>
           <input type="number" value={v.sortOrder} onChange={(e) => setV({ ...v, sortOrder: Number(e.target.value) })} className="px-2 py-1.5 rounded bg-surface border border-border text-sm font-mono" />
           <div className="flex gap-1 justify-end">
-            <button onClick={() => { onSave(v); setEdit(false); }} className="px-3 py-1.5 text-xs rounded bg-primary text-primary-foreground">Save</button>
-            <button onClick={() => setEdit(false)} className="px-3 py-1.5 text-xs rounded bg-surface">Cancel</button>
+            <button onClick={() => { onSave(v); setEdit(false); }} className="px-3 py-1.5 text-xs rounded bg-primary text-primary-foreground">{t.save}</button>
+            <button onClick={() => setEdit(false)} className="px-3 py-1.5 text-xs rounded bg-surface">{t.cancel}</button>
           </div>
         </>
       ) : (
         <>
           <div className="font-semibold">{plan.name}</div>
-          <div className="font-mono text-sm">{plan.duration_days} days</div>
+          <div className="font-mono text-sm">{plan.duration_days} {t.payment_days_unit}</div>
           <div className="font-mono text-sm">{plan.amount_rwf.toLocaleString()} RWF</div>
-          <div className={plan.active ? "text-success text-xs" : "text-muted-foreground text-xs"}>{plan.active ? "active" : "inactive"}</div>
+          <div className={plan.active ? "text-success text-xs" : "text-muted-foreground text-xs"}>{plan.active ? t.admin_plans_active : t.no}</div>
           <div className="text-xs text-muted-foreground font-mono">sort: {plan.sort_order}</div>
           <div className="flex gap-1 justify-end">
             <button onClick={() => setEdit(true)} className="p-1.5 hover:bg-surface rounded"><Pencil className="size-3.5" /></button>
