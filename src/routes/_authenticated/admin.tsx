@@ -251,13 +251,13 @@ function ExtendButton({ onExtend }: { onExtend: (days: number) => void }) {
   return (
     <div className="relative">
       <button onClick={() => setOpen((o) => !o)} className="px-2 py-1 text-xs rounded bg-surface hover:bg-surface-elevated border border-border">
-        Extend
+        {t.admin_btn_extend}
       </button>
       {open && (
         <div className="absolute right-0 mt-1 z-10 bg-surface-elevated border border-border rounded-md shadow-elevated p-1">
           {[7, 14, 30, 90].map((d) => (
             <button key={d} onClick={() => { onExtend(d); setOpen(false); }} className="block w-full text-left px-3 py-1 text-xs hover:bg-surface rounded">
-              +{d} days
+              +{d} {t.payment_days_unit}
             </button>
           ))}
         </div>
