@@ -303,3 +303,75 @@ function CodeHelperPanel({
     </aside>
   );
 }
+
+type LangDef = (typeof LANGS)[number];
+
+function PracticeVideoColumn({ lang }: { lang: LangDef }) {
+  const [courseId, setCourseId] = useState<string>("");
+  const [videoId, setVideoId] = useState<string>("");
+
+  const { data: courses } = useQuery({
+    queryKey: ["practice-courses"],
+    queryFn: async () => {
+      const { data } = await supabase.from("courses").select("id, title, slug, track").order("title");
+      return data ?? [];
+    },
+  });
+
+  const { data: videos } = useQuery({
+    queryKey: ["practice-videos", courseId],
+    enabled: !!courseId,
+    queryFn: async () => {
+      const { data } = await supabase.from("course_videos").select("*").eq("course_id", courseId).order("sort_order").order("created_at");
+      return data ?? [];
+    },
+  });
+
+  useEffect(() => { if (videos && videos.length && !videos.find(v => v.id === videoId)) setVideoId(videos[0].id); }, [videos, videoId]);
+
+  const active = videos?.find(v => v.id === videoId);
+  const url = active?.video_url ?? (active?.storage_path ? supabase.storage.from("course-videos").getPublicUrl(active.storage_path).data.publicUrl : null);
+  const yt = url?.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([\w-]{11})/);
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex gap-1.5">
+        <select value={courseId} onChange={(e) => { setCourseId(e.target.value); setVideoId(""); }} className="flex-1 px-2 py-1.5 rounded bg-surface border border-border text-xs font-mono">
+          <option value="">— {t.nav_courses} —</option>
+          {(courses ?? []).map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
+        </select>
+        <select value={videoId} onChange={(e) => setVideoId(e.target.value)} disabled={!videos?.length} className="flex-1 px-2 py-1.5 rounded bg-surface border border-border text-xs font-mono disabled:opacity-50">
+          <option value="">— video —</option>
+          {(videos ?? []).map((v) => <option key={v.id} value={v.id}>{v.topic} · {v.title}</option>)}
+        </select>
+      </div>
+      <div className="relative rounded-xl overflow-hidden border border-border bg-black aspect-video shadow-elevated animate-scale-in">
+        {url ? (
+          yt ? (
+            <iframe src={`https://www.youtube.com/embed/${yt[1]}`} title={active?.title} className="w-full h-full" allow="autoplay; encrypted-media; picture-in-picture" allowFullScreen />
+          ) : (
+            <video key={active!.id} src={url} controls className="w-full h-full bg-black" />
+          )
+        ) : (
+          <div className="absolute inset-0 grid place-items-center text-center px-4 bg-gradient-to-br from-primary/20 via-background to-accent/20">
+            <div className="text-xs text-muted-foreground">{t.practice_pick_course}</div>
+          </div>
+        )}
+      </div>
+      <div className="rounded-xl border border-border bg-gradient-card p-3">
+        <h3 className="font-semibold text-xs mb-2 flex items-center gap-2">
+          <span className="font-mono text-primary-glow">{t.practice_snippets}</span>
+        </h3>
+        <div className="space-y-1.5">
+          {lang.hints.map((s) => (
+            <button
+              key={s}
+              onClick={() => { navigator.clipboard.writeText(s); toast.success(t.copied); }}
+              className="w-full text-left px-2.5 py-1.5 text-xs font-mono bg-surface hover:bg-surface/70 border border-border rounded truncate"
+            >{s}</button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
