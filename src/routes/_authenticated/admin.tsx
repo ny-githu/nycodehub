@@ -90,28 +90,28 @@ function UsersTab() {
 
   const createMut = useMutation({
     mutationFn: (v: { email: string; password: string; displayName: string; role: "admin" | "instructor" | "learner" }) => createFn({ data: v }),
-    onSuccess: () => { toast.success("User created"); qc.invalidateQueries({ queryKey: ["admin-overview"] }); },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
+    onSuccess: () => { toast.success(t.admin_done); qc.invalidateQueries({ queryKey: ["admin-overview"] }); },
+    onError: (e) => toast.error(e instanceof Error ? e.message : t.admin_failed),
   });
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteFn({ data: { userId: id } }),
-    onSuccess: () => { toast.success("Deleted"); qc.invalidateQueries({ queryKey: ["admin-overview"] }); },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
+    onSuccess: () => { toast.success(t.admin_done); qc.invalidateQueries({ queryKey: ["admin-overview"] }); },
+    onError: (e) => toast.error(e instanceof Error ? e.message : t.admin_failed),
   });
   const extendMut = useMutation({
     mutationFn: (v: { userId: string; days: number }) => extendFn({ data: v }),
-    onSuccess: () => { toast.success("Extended"); qc.invalidateQueries({ queryKey: ["admin-overview"] }); },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
+    onSuccess: () => { toast.success(t.admin_done); qc.invalidateQueries({ queryKey: ["admin-overview"] }); },
+    onError: (e) => toast.error(e instanceof Error ? e.message : t.admin_failed),
   });
   const setExpiryMut = useMutation({
     mutationFn: (v: { userId: string; expiresAt: string | null }) => setExpiryFn({ data: v }),
-    onSuccess: () => { toast.success("Expiry set"); qc.invalidateQueries({ queryKey: ["admin-overview"] }); },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
+    onSuccess: () => { toast.success(t.admin_done); qc.invalidateQueries({ queryKey: ["admin-overview"] }); },
+    onError: (e) => toast.error(e instanceof Error ? e.message : t.admin_failed),
   });
   const disableMut = useMutation({
     mutationFn: (v: { userId: string; disabled: boolean }) => setDisabledFn({ data: v }),
-    onSuccess: (_d, v) => { toast.success(v.disabled ? "Disabled" : "Enabled"); qc.invalidateQueries({ queryKey: ["admin-overview"] }); },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
+    onSuccess: () => { toast.success(t.admin_done); qc.invalidateQueries({ queryKey: ["admin-overview"] }); },
+    onError: (e) => toast.error(e instanceof Error ? e.message : t.admin_failed),
   });
 
   const [form, setForm] = useState({ email: "", password: "", displayName: "", role: "learner" as "admin" | "instructor" | "learner", days: 30 });
