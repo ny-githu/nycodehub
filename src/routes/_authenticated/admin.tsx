@@ -433,20 +433,20 @@ function SettingsTab() {
 
   const updateMut = useMutation({
     mutationFn: () => updateFn({ data: { mobileCode: code, instructions: instr } }),
-    onSuccess: () => { toast.success("Saved"); qc.invalidateQueries({ queryKey: ["payment-page"] }); },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
+    onSuccess: () => { toast.success(t.admin_saved); qc.invalidateQueries({ queryKey: ["payment-page"] }); },
+    onError: (e) => toast.error(e instanceof Error ? e.message : t.admin_failed),
   });
 
-  if (isLoading) return <div className="text-sm text-muted-foreground flex items-center gap-2"><Loader2 className="size-4 animate-spin" /> loading…</div>;
+  if (isLoading) return <div className="text-sm text-muted-foreground flex items-center gap-2"><Loader2 className="size-4 animate-spin" /> {t.loading}</div>;
   if (!data) return null;
 
   return (
     <section className="rounded-xl border border-border bg-gradient-card p-6 max-w-2xl">
-      <h2 className="text-lg font-semibold">Payment page content</h2>
-      <p className="text-xs text-muted-foreground font-mono mt-1">// what users see on /payment</p>
+      <h2 className="text-lg font-semibold">{t.admin_settings_title}</h2>
+      <p className="text-xs text-muted-foreground font-mono mt-1">// /payment</p>
       <form className="mt-5 space-y-4" onSubmit={(e) => { e.preventDefault(); updateMut.mutate(); }}>
         <div>
-          <label className="text-xs font-mono text-muted-foreground">mobile money code</label>
+          <label className="text-xs font-mono text-muted-foreground">{t.admin_settings_code}</label>
           <input
             defaultValue={data.settings.mobile_code}
             onChange={(e) => setCode(e.target.value)}
@@ -454,7 +454,7 @@ function SettingsTab() {
           />
         </div>
         <div>
-          <label className="text-xs font-mono text-muted-foreground">instructions shown to users</label>
+          <label className="text-xs font-mono text-muted-foreground">{t.admin_settings_instructions}</label>
           <textarea
             defaultValue={data.settings.instructions}
             onChange={(e) => setInstr(e.target.value)}
@@ -468,7 +468,7 @@ function SettingsTab() {
           onClick={() => { if (!code) setCode(data.settings.mobile_code); if (!instr) setInstr(data.settings.instructions); }}
           className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-gradient-primary text-primary-foreground font-medium shadow-glow disabled:opacity-60"
         >
-          {updateMut.isPending && <Loader2 className="size-4 animate-spin" />} Save settings
+          {updateMut.isPending && <Loader2 className="size-4 animate-spin" />} {t.admin_settings_save}
         </button>
       </form>
     </section>
