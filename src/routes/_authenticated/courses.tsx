@@ -62,7 +62,7 @@ function Courses() {
                   : "border-border text-muted-foreground hover:text-foreground hover:bg-surface"
               }`}
             >
-              {f}
+              {f === "All" ? t.courses_all : f}
             </button>
           ))}
         </div>
