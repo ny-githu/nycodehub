@@ -90,28 +90,28 @@ function UsersTab() {
 
   const createMut = useMutation({
     mutationFn: (v: { email: string; password: string; displayName: string; role: "admin" | "instructor" | "learner" }) => createFn({ data: v }),
-    onSuccess: () => { toast.success("User created"); qc.invalidateQueries({ queryKey: ["admin-overview"] }); },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
+    onSuccess: () => { toast.success(t.admin_done); qc.invalidateQueries({ queryKey: ["admin-overview"] }); },
+    onError: (e) => toast.error(e instanceof Error ? e.message : t.admin_failed),
   });
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteFn({ data: { userId: id } }),
-    onSuccess: () => { toast.success("Deleted"); qc.invalidateQueries({ queryKey: ["admin-overview"] }); },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
+    onSuccess: () => { toast.success(t.admin_done); qc.invalidateQueries({ queryKey: ["admin-overview"] }); },
+    onError: (e) => toast.error(e instanceof Error ? e.message : t.admin_failed),
   });
   const extendMut = useMutation({
     mutationFn: (v: { userId: string; days: number }) => extendFn({ data: v }),
-    onSuccess: () => { toast.success("Extended"); qc.invalidateQueries({ queryKey: ["admin-overview"] }); },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
+    onSuccess: () => { toast.success(t.admin_done); qc.invalidateQueries({ queryKey: ["admin-overview"] }); },
+    onError: (e) => toast.error(e instanceof Error ? e.message : t.admin_failed),
   });
   const setExpiryMut = useMutation({
     mutationFn: (v: { userId: string; expiresAt: string | null }) => setExpiryFn({ data: v }),
-    onSuccess: () => { toast.success("Expiry set"); qc.invalidateQueries({ queryKey: ["admin-overview"] }); },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
+    onSuccess: () => { toast.success(t.admin_done); qc.invalidateQueries({ queryKey: ["admin-overview"] }); },
+    onError: (e) => toast.error(e instanceof Error ? e.message : t.admin_failed),
   });
   const disableMut = useMutation({
     mutationFn: (v: { userId: string; disabled: boolean }) => setDisabledFn({ data: v }),
-    onSuccess: (_d, v) => { toast.success(v.disabled ? "Disabled" : "Enabled"); qc.invalidateQueries({ queryKey: ["admin-overview"] }); },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
+    onSuccess: () => { toast.success(t.admin_done); qc.invalidateQueries({ queryKey: ["admin-overview"] }); },
+    onError: (e) => toast.error(e instanceof Error ? e.message : t.admin_failed),
   });
 
   const [form, setForm] = useState({ email: "", password: "", displayName: "", role: "learner" as "admin" | "instructor" | "learner", days: 30 });
@@ -124,7 +124,7 @@ function UsersTab() {
   return (
     <>
       <section className="rounded-xl border border-border bg-gradient-card p-6 mb-6">
-        <h2 className="text-lg font-semibold flex items-center gap-2"><UserPlus className="size-4" /> Create account</h2>
+        <h2 className="text-lg font-semibold flex items-center gap-2"><UserPlus className="size-4" /> {t.admin_create_account}</h2>
         <form
           className="mt-4 grid sm:grid-cols-2 lg:grid-cols-5 gap-3"
           onSubmit={(e) => {
@@ -139,28 +139,28 @@ function UsersTab() {
             });
           }}
         >
-          <input required type="email" placeholder="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="px-3 py-2 rounded-md bg-surface border border-border text-sm font-mono" />
-          <input required minLength={6} type="text" placeholder="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} className="px-3 py-2 rounded-md bg-surface border border-border text-sm font-mono" />
-          <input type="text" placeholder="display name" value={form.displayName} onChange={(e) => setForm({ ...form, displayName: e.target.value })} className="px-3 py-2 rounded-md bg-surface border border-border text-sm font-mono" />
+          <input required type="email" placeholder={t.email} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="px-3 py-2 rounded-md bg-surface border border-border text-sm font-mono" />
+          <input required minLength={6} type="text" placeholder={t.password} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} className="px-3 py-2 rounded-md bg-surface border border-border text-sm font-mono" />
+          <input type="text" placeholder={t.admin_form_displayname} value={form.displayName} onChange={(e) => setForm({ ...form, displayName: e.target.value })} className="px-3 py-2 rounded-md bg-surface border border-border text-sm font-mono" />
           <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as typeof form.role })} className="px-3 py-2 rounded-md bg-surface border border-border text-sm font-mono">
             <option value="learner">learner</option>
             <option value="instructor">instructor</option>
             <option value="admin">admin</option>
           </select>
           <div className="flex gap-2">
-            <input type="number" min={0} max={3650} value={form.days} onChange={(e) => setForm({ ...form, days: Number(e.target.value) })} className="w-20 px-3 py-2 rounded-md bg-surface border border-border text-sm font-mono" title="initial subscription days" />
+            <input type="number" min={0} max={3650} value={form.days} onChange={(e) => setForm({ ...form, days: Number(e.target.value) })} className="w-20 px-3 py-2 rounded-md bg-surface border border-border text-sm font-mono" title={t.admin_form_days} />
             <button type="submit" disabled={createMut.isPending} className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-gradient-primary text-primary-foreground font-medium shadow-glow disabled:opacity-60">
-              {createMut.isPending && <Loader2 className="size-4 animate-spin" />} Create
+              {createMut.isPending && <Loader2 className="size-4 animate-spin" />} {t.admin_btn_create}
             </button>
           </div>
         </form>
-        <p className="mt-2 text-xs text-muted-foreground font-mono">days = initial subscription length (0 = no access until you extend)</p>
+        <p className="mt-2 text-xs text-muted-foreground font-mono">{t.admin_form_days_hint}</p>
       </section>
 
       <div className="grid gap-4 mb-4 sm:grid-cols-3">
-        <Stat label="Total users" value={users?.length ?? 0} />
-        <Stat label="Active (paid)" value={active.length} tone="success" />
-        <Stat label="Disabled (unpaid)" value={inactive.length} tone="destructive" />
+        <Stat label={t.admin_users_total} value={users?.length ?? 0} />
+        <Stat label={t.admin_users_active} value={active.length} tone="success" />
+        <Stat label={t.admin_users_disabled} value={inactive.length} tone="destructive" />
       </div>
 
       <div className="mb-3 relative">
@@ -168,23 +168,23 @@ function UsersTab() {
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by email…"
+          placeholder={t.admin_search_email}
           className="w-full pl-9 pr-3 py-2 rounded-md bg-surface border border-border text-sm font-mono"
         />
       </div>
 
       {isLoading ? (
-        <div className="text-sm text-muted-foreground flex items-center gap-2"><Loader2 className="size-4 animate-spin" /> loading…</div>
+        <div className="text-sm text-muted-foreground flex items-center gap-2"><Loader2 className="size-4 animate-spin" /> {t.loading}</div>
       ) : (
         <div className="rounded-xl border border-border bg-gradient-card overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="text-xs font-mono text-muted-foreground bg-surface">
                 <tr>
-                  <th className="text-left p-3">email</th>
-                  <th className="text-left p-3">roles</th>
-                  <th className="text-left p-3">status</th>
-                  <th className="text-left p-3">expires</th>
+                  <th className="text-left p-3">{t.admin_th_email}</th>
+                  <th className="text-left p-3">{t.admin_th_roles}</th>
+                  <th className="text-left p-3">{t.admin_th_status}</th>
+                  <th className="text-left p-3">{t.admin_th_expires}</th>
                   <th className="p-3"></th>
                 </tr>
               </thead>
@@ -195,13 +195,13 @@ function UsersTab() {
                     <td className="p-3 font-mono text-xs text-muted-foreground">{u.roles.join(", ") || "—"}</td>
                     <td className="p-3">
                       {u.is_admin ? (
-                        <span className="text-xs px-2 py-0.5 rounded bg-primary/20 text-primary-glow">admin</span>
+                        <span className="text-xs px-2 py-0.5 rounded bg-primary/20 text-primary-glow">{t.admin_status_admin}</span>
                       ) : u.disabled ? (
-                        <span className="text-xs px-2 py-0.5 rounded bg-destructive/20 text-destructive">disabled</span>
+                        <span className="text-xs px-2 py-0.5 rounded bg-destructive/20 text-destructive">{t.admin_status_disabled}</span>
                       ) : u.active ? (
-                        <span className="text-xs px-2 py-0.5 rounded bg-success/20 text-success">active</span>
+                        <span className="text-xs px-2 py-0.5 rounded bg-success/20 text-success">{t.admin_status_active}</span>
                       ) : (
-                        <span className="text-xs px-2 py-0.5 rounded bg-chart-4/20 text-chart-4">expired</span>
+                        <span className="text-xs px-2 py-0.5 rounded bg-chart-4/20 text-chart-4">{t.admin_status_expired}</span>
                       )}
                     </td>
                     <td className="p-3 font-mono text-xs">
@@ -213,24 +213,24 @@ function UsersTab() {
                           <button
                             onClick={() => disableMut.mutate({ userId: u.id, disabled: !u.disabled })}
                             className={`px-2 py-1 text-xs rounded inline-flex items-center gap-1 ${u.disabled ? "bg-success/20 text-success hover:bg-success/30" : "bg-chart-4/20 text-chart-4 hover:bg-chart-4/30"}`}
-                            title={u.disabled ? "Enable" : "Disable"}
+                            title={u.disabled ? t.admin_btn_enable : t.admin_btn_disable}
                           >
-                            {u.disabled ? <><Unlock className="size-3" /> Enable</> : <><Lock className="size-3" /> Disable</>}
+                            {u.disabled ? <><Unlock className="size-3" /> {t.admin_btn_enable}</> : <><Lock className="size-3" /> {t.admin_btn_disable}</>}
                           </button>
                         )}
                         <ExtendButton onExtend={(days) => extendMut.mutate({ userId: u.id, days })} />
                         <button
                           onClick={() => {
-                            const v = prompt("Set expiry date (YYYY-MM-DD) — empty to clear:", u.expires_at ? u.expires_at.slice(0,10) : "");
+                            const v = prompt(t.admin_set_expiry_prompt, u.expires_at ? u.expires_at.slice(0,10) : "");
                             if (v === null) return;
                             const iso = v.trim() ? new Date(v).toISOString() : null;
                             setExpiryMut.mutate({ userId: u.id, expiresAt: iso });
                           }}
                           className="p-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-surface rounded"
-                          title="Set custom expiry"
+                          title={t.admin_th_expires}
                         ><Calendar className="size-3.5" /></button>
                         <button
-                          onClick={() => { if (confirm(`Delete ${u.email}?`)) deleteMut.mutate(u.id); }}
+                          onClick={() => { if (confirm(`${t.admin_btn_delete} ${u.email}?`)) deleteMut.mutate(u.id); }}
                           className="p-1.5 text-xs text-destructive hover:bg-destructive/10 rounded"
                         ><Trash2 className="size-3.5" /></button>
                       </div>
@@ -251,13 +251,13 @@ function ExtendButton({ onExtend }: { onExtend: (days: number) => void }) {
   return (
     <div className="relative">
       <button onClick={() => setOpen((o) => !o)} className="px-2 py-1 text-xs rounded bg-surface hover:bg-surface-elevated border border-border">
-        Extend
+        {t.admin_btn_extend}
       </button>
       {open && (
         <div className="absolute right-0 mt-1 z-10 bg-surface-elevated border border-border rounded-md shadow-elevated p-1">
           {[7, 14, 30, 90].map((d) => (
             <button key={d} onClick={() => { onExtend(d); setOpen(false); }} className="block w-full text-left px-3 py-1 text-xs hover:bg-surface rounded">
-              +{d} days
+              +{d} {t.payment_days_unit}
             </button>
           ))}
         </div>
@@ -283,27 +283,27 @@ function PaymentsTab() {
 
   const reviewMut = useMutation({
     mutationFn: (v: { requestId: string; action: "approve" | "reject" }) => reviewFn({ data: v }),
-    onSuccess: () => { toast.success("Done"); qc.invalidateQueries({ queryKey: ["admin-payments"] }); qc.invalidateQueries({ queryKey: ["admin-overview"] }); },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
+    onSuccess: () => { toast.success(t.admin_done); qc.invalidateQueries({ queryKey: ["admin-payments"] }); qc.invalidateQueries({ queryKey: ["admin-overview"] }); },
+    onError: (e) => toast.error(e instanceof Error ? e.message : t.admin_failed),
   });
 
-  if (isLoading) return <div className="text-sm text-muted-foreground flex items-center gap-2"><Loader2 className="size-4 animate-spin" /> loading…</div>;
+  if (isLoading) return <div className="text-sm text-muted-foreground flex items-center gap-2"><Loader2 className="size-4 animate-spin" /> {t.loading}</div>;
 
   return (
     <div className="rounded-xl border border-border bg-gradient-card overflow-hidden">
       {(requests ?? []).length === 0 ? (
-        <div className="p-8 text-center text-sm text-muted-foreground">No payment requests yet.</div>
+        <div className="p-8 text-center text-sm text-muted-foreground">{t.admin_payments_none}</div>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="text-xs font-mono text-muted-foreground bg-surface">
               <tr>
-                <th className="text-left p-3">date</th>
-                <th className="text-left p-3">user</th>
-                <th className="text-left p-3">plan</th>
-                <th className="text-left p-3">amount</th>
-                <th className="text-left p-3">txn id</th>
-                <th className="text-left p-3">status</th>
+                <th className="text-left p-3">{t.payment_th_date}</th>
+                <th className="text-left p-3">{t.admin_th_email}</th>
+                <th className="text-left p-3">{t.admin_tab_plans}</th>
+                <th className="text-left p-3">{t.payment_th_amount}</th>
+                <th className="text-left p-3">{t.payment_th_txn}</th>
+                <th className="text-left p-3">{t.payment_th_status}</th>
                 <th className="p-3"></th>
               </tr>
             </thead>
@@ -316,15 +316,15 @@ function PaymentsTab() {
                   <td className="p-3 font-mono">{r.amount_rwf.toLocaleString()} RWF</td>
                   <td className="p-3 font-mono">{r.transaction_id}</td>
                   <td className="p-3">
-                    {r.status === "pending" && <span className="inline-flex items-center gap-1 text-chart-4 text-xs"><Clock className="size-3" /> pending</span>}
-                    {r.status === "approved" && <span className="inline-flex items-center gap-1 text-success text-xs"><CheckCircle2 className="size-3" /> approved</span>}
-                    {r.status === "rejected" && <span className="inline-flex items-center gap-1 text-destructive text-xs"><XCircle className="size-3" /> rejected</span>}
+                    {r.status === "pending" && <span className="inline-flex items-center gap-1 text-chart-4 text-xs"><Clock className="size-3" /> {t.payment_status_pending}</span>}
+                    {r.status === "approved" && <span className="inline-flex items-center gap-1 text-success text-xs"><CheckCircle2 className="size-3" /> {t.payment_status_approved}</span>}
+                    {r.status === "rejected" && <span className="inline-flex items-center gap-1 text-destructive text-xs"><XCircle className="size-3" /> {t.payment_status_rejected}</span>}
                   </td>
                   <td className="p-3 text-right">
                     {r.status === "pending" && (
                       <div className="flex justify-end gap-1">
-                        <button onClick={() => reviewMut.mutate({ requestId: r.id, action: "approve" })} className="px-2 py-1 text-xs rounded bg-success/20 text-success hover:bg-success/30">Approve</button>
-                        <button onClick={() => reviewMut.mutate({ requestId: r.id, action: "reject" })} className="px-2 py-1 text-xs rounded bg-destructive/20 text-destructive hover:bg-destructive/30">Reject</button>
+                        <button onClick={() => reviewMut.mutate({ requestId: r.id, action: "approve" })} className="px-2 py-1 text-xs rounded bg-success/20 text-success hover:bg-success/30">{t.admin_payments_approve}</button>
+                        <button onClick={() => reviewMut.mutate({ requestId: r.id, action: "reject" })} className="px-2 py-1 text-xs rounded bg-destructive/20 text-destructive hover:bg-destructive/30">{t.admin_payments_reject}</button>
                       </div>
                     )}
                   </td>
@@ -347,40 +347,40 @@ function PlansTab() {
 
   const upsertMut = useMutation({
     mutationFn: (v: { id?: string; name: string; durationDays: number; amountRwf: number; active: boolean; sortOrder: number }) => upsertFn({ data: v }),
-    onSuccess: () => { toast.success("Saved"); qc.invalidateQueries({ queryKey: ["admin-plans"] }); },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
+    onSuccess: () => { toast.success(t.admin_saved); qc.invalidateQueries({ queryKey: ["admin-plans"] }); },
+    onError: (e) => toast.error(e instanceof Error ? e.message : t.admin_failed),
   });
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteFn({ data: { id } }),
-    onSuccess: () => { toast.success("Deleted"); qc.invalidateQueries({ queryKey: ["admin-plans"] }); },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
+    onSuccess: () => { toast.success(t.admin_done); qc.invalidateQueries({ queryKey: ["admin-plans"] }); },
+    onError: (e) => toast.error(e instanceof Error ? e.message : t.admin_failed),
   });
 
   const [draft, setDraft] = useState({ name: "", durationDays: 7, amountRwf: 2000, active: true, sortOrder: 99 });
 
-  if (isLoading) return <div className="text-sm text-muted-foreground flex items-center gap-2"><Loader2 className="size-4 animate-spin" /> loading…</div>;
+  if (isLoading) return <div className="text-sm text-muted-foreground flex items-center gap-2"><Loader2 className="size-4 animate-spin" /> {t.loading}</div>;
 
   return (
     <>
       <section className="rounded-xl border border-border bg-gradient-card p-6 mb-6">
-        <h2 className="text-lg font-semibold flex items-center gap-2"><Plus className="size-4" /> Add plan</h2>
+        <h2 className="text-lg font-semibold flex items-center gap-2"><Plus className="size-4" /> {t.admin_plans_add}</h2>
         <form
           className="mt-4 grid sm:grid-cols-5 gap-3"
           onSubmit={(e) => { e.preventDefault(); upsertMut.mutate(draft, { onSuccess: () => setDraft({ name: "", durationDays: 7, amountRwf: 2000, active: true, sortOrder: 99 }) }); }}
         >
-          <input required placeholder="name (e.g. Monthly)" value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} className="px-3 py-2 rounded-md bg-surface border border-border text-sm font-mono" />
-          <input required type="number" min={1} placeholder="days" value={draft.durationDays} onChange={(e) => setDraft({ ...draft, durationDays: Number(e.target.value) })} className="px-3 py-2 rounded-md bg-surface border border-border text-sm font-mono" />
-          <input required type="number" min={0} placeholder="amount RWF" value={draft.amountRwf} onChange={(e) => setDraft({ ...draft, amountRwf: Number(e.target.value) })} className="px-3 py-2 rounded-md bg-surface border border-border text-sm font-mono" />
+          <input required placeholder={t.admin_plans_name} value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} className="px-3 py-2 rounded-md bg-surface border border-border text-sm font-mono" />
+          <input required type="number" min={1} placeholder={t.admin_plans_days} value={draft.durationDays} onChange={(e) => setDraft({ ...draft, durationDays: Number(e.target.value) })} className="px-3 py-2 rounded-md bg-surface border border-border text-sm font-mono" />
+          <input required type="number" min={0} placeholder={t.admin_plans_amount} value={draft.amountRwf} onChange={(e) => setDraft({ ...draft, amountRwf: Number(e.target.value) })} className="px-3 py-2 rounded-md bg-surface border border-border text-sm font-mono" />
           <input type="number" placeholder="sort" value={draft.sortOrder} onChange={(e) => setDraft({ ...draft, sortOrder: Number(e.target.value) })} className="px-3 py-2 rounded-md bg-surface border border-border text-sm font-mono" />
           <button type="submit" disabled={upsertMut.isPending} className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-gradient-primary text-primary-foreground font-medium shadow-glow disabled:opacity-60">
-            {upsertMut.isPending && <Loader2 className="size-4 animate-spin" />} Add
+            {upsertMut.isPending && <Loader2 className="size-4 animate-spin" />} {t.add}
           </button>
         </form>
       </section>
 
       <div className="space-y-2">
         {(plans ?? []).map((p) => (
-          <PlanRow key={p.id} plan={p} onSave={(v) => upsertMut.mutate({ id: p.id, ...v })} onDelete={() => { if (confirm(`Delete ${p.name}?`)) deleteMut.mutate(p.id); }} />
+          <PlanRow key={p.id} plan={p} onSave={(v) => upsertMut.mutate({ id: p.id, ...v })} onDelete={() => { if (confirm(`${t.admin_btn_delete} ${p.name}?`)) deleteMut.mutate(p.id); }} />
         ))}
       </div>
     </>
@@ -398,19 +398,19 @@ function PlanRow({ plan, onSave, onDelete }: { plan: { id: string; name: string;
           <input value={v.name} onChange={(e) => setV({ ...v, name: e.target.value })} className="px-2 py-1.5 rounded bg-surface border border-border text-sm font-mono" />
           <input type="number" value={v.durationDays} onChange={(e) => setV({ ...v, durationDays: Number(e.target.value) })} className="px-2 py-1.5 rounded bg-surface border border-border text-sm font-mono" />
           <input type="number" value={v.amountRwf} onChange={(e) => setV({ ...v, amountRwf: Number(e.target.value) })} className="px-2 py-1.5 rounded bg-surface border border-border text-sm font-mono" />
-          <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={v.active} onChange={(e) => setV({ ...v, active: e.target.checked })} /> active</label>
+          <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={v.active} onChange={(e) => setV({ ...v, active: e.target.checked })} /> {t.admin_plans_active}</label>
           <input type="number" value={v.sortOrder} onChange={(e) => setV({ ...v, sortOrder: Number(e.target.value) })} className="px-2 py-1.5 rounded bg-surface border border-border text-sm font-mono" />
           <div className="flex gap-1 justify-end">
-            <button onClick={() => { onSave(v); setEdit(false); }} className="px-3 py-1.5 text-xs rounded bg-primary text-primary-foreground">Save</button>
-            <button onClick={() => setEdit(false)} className="px-3 py-1.5 text-xs rounded bg-surface">Cancel</button>
+            <button onClick={() => { onSave(v); setEdit(false); }} className="px-3 py-1.5 text-xs rounded bg-primary text-primary-foreground">{t.save}</button>
+            <button onClick={() => setEdit(false)} className="px-3 py-1.5 text-xs rounded bg-surface">{t.cancel}</button>
           </div>
         </>
       ) : (
         <>
           <div className="font-semibold">{plan.name}</div>
-          <div className="font-mono text-sm">{plan.duration_days} days</div>
+          <div className="font-mono text-sm">{plan.duration_days} {t.payment_days_unit}</div>
           <div className="font-mono text-sm">{plan.amount_rwf.toLocaleString()} RWF</div>
-          <div className={plan.active ? "text-success text-xs" : "text-muted-foreground text-xs"}>{plan.active ? "active" : "inactive"}</div>
+          <div className={plan.active ? "text-success text-xs" : "text-muted-foreground text-xs"}>{plan.active ? t.admin_plans_active : t.no}</div>
           <div className="text-xs text-muted-foreground font-mono">sort: {plan.sort_order}</div>
           <div className="flex gap-1 justify-end">
             <button onClick={() => setEdit(true)} className="p-1.5 hover:bg-surface rounded"><Pencil className="size-3.5" /></button>
@@ -433,20 +433,20 @@ function SettingsTab() {
 
   const updateMut = useMutation({
     mutationFn: () => updateFn({ data: { mobileCode: code, instructions: instr } }),
-    onSuccess: () => { toast.success("Saved"); qc.invalidateQueries({ queryKey: ["payment-page"] }); },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
+    onSuccess: () => { toast.success(t.admin_saved); qc.invalidateQueries({ queryKey: ["payment-page"] }); },
+    onError: (e) => toast.error(e instanceof Error ? e.message : t.admin_failed),
   });
 
-  if (isLoading) return <div className="text-sm text-muted-foreground flex items-center gap-2"><Loader2 className="size-4 animate-spin" /> loading…</div>;
+  if (isLoading) return <div className="text-sm text-muted-foreground flex items-center gap-2"><Loader2 className="size-4 animate-spin" /> {t.loading}</div>;
   if (!data) return null;
 
   return (
     <section className="rounded-xl border border-border bg-gradient-card p-6 max-w-2xl">
-      <h2 className="text-lg font-semibold">Payment page content</h2>
-      <p className="text-xs text-muted-foreground font-mono mt-1">// what users see on /payment</p>
+      <h2 className="text-lg font-semibold">{t.admin_settings_title}</h2>
+      <p className="text-xs text-muted-foreground font-mono mt-1">// /payment</p>
       <form className="mt-5 space-y-4" onSubmit={(e) => { e.preventDefault(); updateMut.mutate(); }}>
         <div>
-          <label className="text-xs font-mono text-muted-foreground">mobile money code</label>
+          <label className="text-xs font-mono text-muted-foreground">{t.admin_settings_code}</label>
           <input
             defaultValue={data.settings.mobile_code}
             onChange={(e) => setCode(e.target.value)}
@@ -454,7 +454,7 @@ function SettingsTab() {
           />
         </div>
         <div>
-          <label className="text-xs font-mono text-muted-foreground">instructions shown to users</label>
+          <label className="text-xs font-mono text-muted-foreground">{t.admin_settings_instructions}</label>
           <textarea
             defaultValue={data.settings.instructions}
             onChange={(e) => setInstr(e.target.value)}
@@ -468,7 +468,7 @@ function SettingsTab() {
           onClick={() => { if (!code) setCode(data.settings.mobile_code); if (!instr) setInstr(data.settings.instructions); }}
           className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-gradient-primary text-primary-foreground font-medium shadow-glow disabled:opacity-60"
         >
-          {updateMut.isPending && <Loader2 className="size-4 animate-spin" />} Save settings
+          {updateMut.isPending && <Loader2 className="size-4 animate-spin" />} {t.admin_settings_save}
         </button>
       </form>
     </section>
@@ -486,7 +486,7 @@ function CoursesTab() {
   return (
     <div className="grid lg:grid-cols-[260px_1fr] gap-4">
       <aside className="rounded-xl border border-border bg-gradient-card p-3 max-h-[70vh] overflow-y-auto">
-        <h3 className="text-xs font-mono text-muted-foreground mb-2">Courses</h3>
+        <h3 className="text-xs font-mono text-muted-foreground mb-2">{t.nav_courses}</h3>
         <div className="space-y-1">
           {(courses ?? []).map((c) => (
             <button
@@ -502,7 +502,7 @@ function CoursesTab() {
           ))}
         </div>
       </aside>
-      {current ? <VideosPanel courseId={current.id} title={current.title} /> : <div className="text-sm text-muted-foreground">No course selected.</div>}
+      {current ? <VideosPanel courseId={current.id} title={current.title} /> : <div className="text-sm text-muted-foreground">{t.admin_courses_select}</div>}
     </div>
   );
 }
