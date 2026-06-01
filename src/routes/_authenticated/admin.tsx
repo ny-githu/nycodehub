@@ -283,27 +283,27 @@ function PaymentsTab() {
 
   const reviewMut = useMutation({
     mutationFn: (v: { requestId: string; action: "approve" | "reject" }) => reviewFn({ data: v }),
-    onSuccess: () => { toast.success("Done"); qc.invalidateQueries({ queryKey: ["admin-payments"] }); qc.invalidateQueries({ queryKey: ["admin-overview"] }); },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
+    onSuccess: () => { toast.success(t.admin_done); qc.invalidateQueries({ queryKey: ["admin-payments"] }); qc.invalidateQueries({ queryKey: ["admin-overview"] }); },
+    onError: (e) => toast.error(e instanceof Error ? e.message : t.admin_failed),
   });
 
-  if (isLoading) return <div className="text-sm text-muted-foreground flex items-center gap-2"><Loader2 className="size-4 animate-spin" /> loading…</div>;
+  if (isLoading) return <div className="text-sm text-muted-foreground flex items-center gap-2"><Loader2 className="size-4 animate-spin" /> {t.loading}</div>;
 
   return (
     <div className="rounded-xl border border-border bg-gradient-card overflow-hidden">
       {(requests ?? []).length === 0 ? (
-        <div className="p-8 text-center text-sm text-muted-foreground">No payment requests yet.</div>
+        <div className="p-8 text-center text-sm text-muted-foreground">{t.admin_payments_none}</div>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="text-xs font-mono text-muted-foreground bg-surface">
               <tr>
-                <th className="text-left p-3">date</th>
-                <th className="text-left p-3">user</th>
-                <th className="text-left p-3">plan</th>
-                <th className="text-left p-3">amount</th>
-                <th className="text-left p-3">txn id</th>
-                <th className="text-left p-3">status</th>
+                <th className="text-left p-3">{t.payment_th_date}</th>
+                <th className="text-left p-3">{t.admin_th_email}</th>
+                <th className="text-left p-3">{t.admin_tab_plans}</th>
+                <th className="text-left p-3">{t.payment_th_amount}</th>
+                <th className="text-left p-3">{t.payment_th_txn}</th>
+                <th className="text-left p-3">{t.payment_th_status}</th>
                 <th className="p-3"></th>
               </tr>
             </thead>
@@ -316,15 +316,15 @@ function PaymentsTab() {
                   <td className="p-3 font-mono">{r.amount_rwf.toLocaleString()} RWF</td>
                   <td className="p-3 font-mono">{r.transaction_id}</td>
                   <td className="p-3">
-                    {r.status === "pending" && <span className="inline-flex items-center gap-1 text-chart-4 text-xs"><Clock className="size-3" /> pending</span>}
-                    {r.status === "approved" && <span className="inline-flex items-center gap-1 text-success text-xs"><CheckCircle2 className="size-3" /> approved</span>}
-                    {r.status === "rejected" && <span className="inline-flex items-center gap-1 text-destructive text-xs"><XCircle className="size-3" /> rejected</span>}
+                    {r.status === "pending" && <span className="inline-flex items-center gap-1 text-chart-4 text-xs"><Clock className="size-3" /> {t.payment_status_pending}</span>}
+                    {r.status === "approved" && <span className="inline-flex items-center gap-1 text-success text-xs"><CheckCircle2 className="size-3" /> {t.payment_status_approved}</span>}
+                    {r.status === "rejected" && <span className="inline-flex items-center gap-1 text-destructive text-xs"><XCircle className="size-3" /> {t.payment_status_rejected}</span>}
                   </td>
                   <td className="p-3 text-right">
                     {r.status === "pending" && (
                       <div className="flex justify-end gap-1">
-                        <button onClick={() => reviewMut.mutate({ requestId: r.id, action: "approve" })} className="px-2 py-1 text-xs rounded bg-success/20 text-success hover:bg-success/30">Approve</button>
-                        <button onClick={() => reviewMut.mutate({ requestId: r.id, action: "reject" })} className="px-2 py-1 text-xs rounded bg-destructive/20 text-destructive hover:bg-destructive/30">Reject</button>
+                        <button onClick={() => reviewMut.mutate({ requestId: r.id, action: "approve" })} className="px-2 py-1 text-xs rounded bg-success/20 text-success hover:bg-success/30">{t.admin_payments_approve}</button>
+                        <button onClick={() => reviewMut.mutate({ requestId: r.id, action: "reject" })} className="px-2 py-1 text-xs rounded bg-destructive/20 text-destructive hover:bg-destructive/30">{t.admin_payments_reject}</button>
                       </div>
                     )}
                   </td>
