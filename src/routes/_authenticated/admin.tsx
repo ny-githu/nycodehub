@@ -181,10 +181,10 @@ function UsersTab() {
             <table className="w-full text-sm">
               <thead className="text-xs font-mono text-muted-foreground bg-surface">
                 <tr>
-                  <th className="text-left p-3">email</th>
-                  <th className="text-left p-3">roles</th>
-                  <th className="text-left p-3">status</th>
-                  <th className="text-left p-3">expires</th>
+                  <th className="text-left p-3">{t.admin_th_email}</th>
+                  <th className="text-left p-3">{t.admin_th_roles}</th>
+                  <th className="text-left p-3">{t.admin_th_status}</th>
+                  <th className="text-left p-3">{t.admin_th_expires}</th>
                   <th className="p-3"></th>
                 </tr>
               </thead>
@@ -195,13 +195,13 @@ function UsersTab() {
                     <td className="p-3 font-mono text-xs text-muted-foreground">{u.roles.join(", ") || "—"}</td>
                     <td className="p-3">
                       {u.is_admin ? (
-                        <span className="text-xs px-2 py-0.5 rounded bg-primary/20 text-primary-glow">admin</span>
+                        <span className="text-xs px-2 py-0.5 rounded bg-primary/20 text-primary-glow">{t.admin_status_admin}</span>
                       ) : u.disabled ? (
-                        <span className="text-xs px-2 py-0.5 rounded bg-destructive/20 text-destructive">disabled</span>
+                        <span className="text-xs px-2 py-0.5 rounded bg-destructive/20 text-destructive">{t.admin_status_disabled}</span>
                       ) : u.active ? (
-                        <span className="text-xs px-2 py-0.5 rounded bg-success/20 text-success">active</span>
+                        <span className="text-xs px-2 py-0.5 rounded bg-success/20 text-success">{t.admin_status_active}</span>
                       ) : (
-                        <span className="text-xs px-2 py-0.5 rounded bg-chart-4/20 text-chart-4">expired</span>
+                        <span className="text-xs px-2 py-0.5 rounded bg-chart-4/20 text-chart-4">{t.admin_status_expired}</span>
                       )}
                     </td>
                     <td className="p-3 font-mono text-xs">
@@ -213,24 +213,24 @@ function UsersTab() {
                           <button
                             onClick={() => disableMut.mutate({ userId: u.id, disabled: !u.disabled })}
                             className={`px-2 py-1 text-xs rounded inline-flex items-center gap-1 ${u.disabled ? "bg-success/20 text-success hover:bg-success/30" : "bg-chart-4/20 text-chart-4 hover:bg-chart-4/30"}`}
-                            title={u.disabled ? "Enable" : "Disable"}
+                            title={u.disabled ? t.admin_btn_enable : t.admin_btn_disable}
                           >
-                            {u.disabled ? <><Unlock className="size-3" /> Enable</> : <><Lock className="size-3" /> Disable</>}
+                            {u.disabled ? <><Unlock className="size-3" /> {t.admin_btn_enable}</> : <><Lock className="size-3" /> {t.admin_btn_disable}</>}
                           </button>
                         )}
                         <ExtendButton onExtend={(days) => extendMut.mutate({ userId: u.id, days })} />
                         <button
                           onClick={() => {
-                            const v = prompt("Set expiry date (YYYY-MM-DD) — empty to clear:", u.expires_at ? u.expires_at.slice(0,10) : "");
+                            const v = prompt(t.admin_set_expiry_prompt, u.expires_at ? u.expires_at.slice(0,10) : "");
                             if (v === null) return;
                             const iso = v.trim() ? new Date(v).toISOString() : null;
                             setExpiryMut.mutate({ userId: u.id, expiresAt: iso });
                           }}
                           className="p-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-surface rounded"
-                          title="Set custom expiry"
+                          title={t.admin_th_expires}
                         ><Calendar className="size-3.5" /></button>
                         <button
-                          onClick={() => { if (confirm(`Delete ${u.email}?`)) deleteMut.mutate(u.id); }}
+                          onClick={() => { if (confirm(`${t.admin_btn_delete} ${u.email}?`)) deleteMut.mutate(u.id); }}
                           className="p-1.5 text-xs text-destructive hover:bg-destructive/10 rounded"
                         ><Trash2 className="size-3.5" /></button>
                       </div>
