@@ -3,6 +3,8 @@ import { Layout } from "@/components/site/Layout";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Editor from "@monaco-editor/react";
 import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { runCodeRemote } from "@/lib/code-runner.functions";
 import { askCodeHelper } from "@/lib/codehelper.functions";
 import { Play, Loader2, RefreshCw, Sparkles, X, Terminal as TermIcon, Eye, Send } from "lucide-react";
