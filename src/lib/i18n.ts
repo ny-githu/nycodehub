@@ -13,7 +13,7 @@ export const t = {
   nav_open_lab: "Fungura igirira",
   // auth
   signin_title: "Injira",
-  signin_subtitle: "// konti zihabwa n'umuyobozi w'urubuga",
+  signin_subtitle: "Konti zihabwa n'umuyobozi w'urubuga",
   email: "imeri",
   password: "ijambobanga",
   signin_btn: "Injira",
@@ -78,7 +78,7 @@ export const t = {
   practice_python_starting: "Python iratangira…",
   // payment
   payment_h1: "Kwishyura",
-  payment_sub: "// komeza icyiciro cyawe cya NYCODEHUB",
+  payment_sub: "Komeza icyiciro cyawe cya NYCODEHUB",
   payment_disabled: "Konti yawe yahagaritswe",
   payment_disabled_p: "Ishyura imwe muri gahunda hasi kugira ngo ukomeze gukoresha amasomo n'igirira.",
   payment_active: "Konti irakora",
@@ -104,7 +104,7 @@ export const t = {
   payment_days_unit: "iminsi",
   // admin
   admin_title: "Ubuyobozi bwa NYCODEHUB",
-  admin_sub: "// gucunga abakoresha, amasomo n'ubwishyu",
+  admin_sub: "Gucunga abakoresha, amasomo n'ubwishyu",
   admin_tab_users: "Abakoresha",
   admin_tab_courses: "Amasomo & Videwo",
   admin_tab_payments: "Ubwishyu",
