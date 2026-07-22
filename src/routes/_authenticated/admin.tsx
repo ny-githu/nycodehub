@@ -443,7 +443,7 @@ function SettingsTab() {
   return (
     <section className="rounded-xl border border-border bg-gradient-card p-6 max-w-2xl">
       <h2 className="text-lg font-semibold">{t.admin_settings_title}</h2>
-      <p className="text-xs text-muted-foreground font-mono mt-1">// /payment</p>
+      <p className="text-xs text-muted-foreground mt-1">{t.admin_settings_title}</p>
       <form className="mt-5 space-y-4" onSubmit={(e) => { e.preventDefault(); updateMut.mutate(); }}>
         <div>
           <label className="text-xs font-mono text-muted-foreground">{t.admin_settings_code}</label>

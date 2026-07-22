@@ -226,7 +226,7 @@ function Practice() {
                 <span className="text-xs font-mono text-muted-foreground">{t.practice_output}</span>
               </div>
               <pre className="p-4 text-sm font-mono whitespace-pre-wrap overflow-auto max-h-[240px] min-h-[100px] text-foreground">
-                {output || <span className="text-muted-foreground">// run code…</span>}
+                {output || <span className="text-muted-foreground">{t.practice_output}…</span>}
               </pre>
             </div>
           </div>
