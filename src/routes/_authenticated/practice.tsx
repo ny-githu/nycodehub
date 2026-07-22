@@ -78,9 +78,15 @@ async function loadPyodide() {
 }
 
 function Practice() {
-  const [langKey, setLangKey] = useState<LangKey>("html");
+  const [langKey, setLangKey] = useState<LangKey>(() => {
+    if (typeof window === "undefined") return "html";
+    return (localStorage.getItem("practice:lang") as LangKey) || "html";
+  });
   const lang = useMemo(() => LANGS.find((l) => l.key === langKey)!, [langKey]);
-  const [code, setCode] = useState(lang.sample);
+  const [code, setCode] = useState(() => {
+    if (typeof window === "undefined") return lang.sample;
+    return localStorage.getItem(`practice:code:${langKey}`) ?? lang.sample;
+  });
   const [output, setOutput] = useState("");
   const [previewHtml, setPreviewHtml] = useState("");
   const [running, setRunning] = useState(false);
@@ -92,7 +98,16 @@ function Practice() {
   const debounceRef = useRef<number | null>(null);
 
   useEffect(() => { setMounted(true); }, []);
-  useEffect(() => { setCode(lang.sample); setOutput(""); setPreviewHtml(""); }, [langKey]);
+  useEffect(() => {
+    localStorage.setItem("practice:lang", langKey);
+    const saved = localStorage.getItem(`practice:code:${langKey}`);
+    setCode(saved ?? lang.sample);
+    setOutput(""); setPreviewHtml("");
+  }, [langKey]);
+  useEffect(() => {
+    if (!mounted) return;
+    localStorage.setItem(`practice:code:${langKey}`, code);
+  }, [code, langKey, mounted]);
 
   async function run() {
     setRunning(true);
