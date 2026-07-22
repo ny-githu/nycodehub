@@ -1,0 +1,117 @@
+{
+  "version": 1,
+  "sdk_version": "0.24.0",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://pwwuucakkivosweudbqy.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "nycodehub-mcp",
+      "version": "0.1.0",
+      "title": "NYCODEHUB"
+    },
+    "tools": [
+      {
+        "name": "list_courses",
+        "title": "List courses",
+        "description": "List NYCODEHUB courses (title, slug, track, level, summary).",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "track": {
+              "type": "string",
+              "description": "Optional track filter, e.g. 'web'."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_course_videos",
+        "title": "List course videos",
+        "description": "List videos for a course by slug, grouped by topic and ordered.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "slug": {
+              "type": "string",
+              "description": "Course slug."
+            }
+          },
+          "required": [
+            "slug"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_my_profile",
+        "title": "Get my profile",
+        "description": "Return the signed-in user's NYCODEHUB profile, role, and account status.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "ask_codehelper",
+        "title": "Ask CODEHELPER",
+        "description": "Ask the NYCODEHUB CODEHELPER a coding question. Replies in Kinyarwanda.",
+        "annotations": {
+          "readOnlyHint": true,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "language": {
+              "type": "string",
+              "description": "Programming language, e.g. 'python'."
+            },
+            "code": {
+              "type": "string",
+              "description": "Current code (optional)."
+            },
+            "question": {
+              "type": "string",
+              "description": "The student's question."
+            }
+          },
+          "required": [
+            "language",
+            "question"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
