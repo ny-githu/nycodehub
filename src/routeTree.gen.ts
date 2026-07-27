@@ -14,6 +14,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedPricingRouteImport } from './routes/_authenticated/pricing'
+import { Route as AuthenticatedPracticeRouteImport } from './routes/_authenticated/practice'
 import { Route as AuthenticatedPaymentRouteImport } from './routes/_authenticated/payment'
 import { Route as AuthenticatedPathsRouteImport } from './routes/_authenticated/paths'
 import { Route as AuthenticatedCoursesRouteImport } from './routes/_authenticated/courses'
@@ -47,6 +48,11 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
 const AuthenticatedPricingRoute = AuthenticatedPricingRouteImport.update({
   id: '/pricing',
   path: '/pricing',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedPracticeRoute = AuthenticatedPracticeRouteImport.update({
+  id: '/practice',
+  path: '/practice',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedPaymentRoute = AuthenticatedPaymentRouteImport.update({
@@ -114,6 +120,7 @@ export interface FileRoutesByFullPath {
   '/courses': typeof AuthenticatedCoursesRouteWithChildren
   '/paths': typeof AuthenticatedPathsRoute
   '/payment': typeof AuthenticatedPaymentRoute
+  '/practice': typeof AuthenticatedPracticeRoute
   '/pricing': typeof AuthenticatedPricingRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -129,6 +136,7 @@ export interface FileRoutesByTo {
   '/courses': typeof AuthenticatedCoursesRouteWithChildren
   '/paths': typeof AuthenticatedPathsRoute
   '/payment': typeof AuthenticatedPaymentRoute
+  '/practice': typeof AuthenticatedPracticeRoute
   '/pricing': typeof AuthenticatedPricingRoute
   '/': typeof AuthenticatedIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
@@ -147,6 +155,7 @@ export interface FileRoutesById {
   '/_authenticated/courses': typeof AuthenticatedCoursesRouteWithChildren
   '/_authenticated/paths': typeof AuthenticatedPathsRoute
   '/_authenticated/payment': typeof AuthenticatedPaymentRoute
+  '/_authenticated/practice': typeof AuthenticatedPracticeRoute
   '/_authenticated/pricing': typeof AuthenticatedPricingRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
@@ -166,6 +175,7 @@ export interface FileRouteTypes {
     | '/courses'
     | '/paths'
     | '/payment'
+    | '/practice'
     | '/pricing'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -181,6 +191,7 @@ export interface FileRouteTypes {
     | '/courses'
     | '/paths'
     | '/payment'
+    | '/practice'
     | '/pricing'
     | '/'
     | '/.lovable/oauth/consent'
@@ -198,6 +209,7 @@ export interface FileRouteTypes {
     | '/_authenticated/courses'
     | '/_authenticated/paths'
     | '/_authenticated/payment'
+    | '/_authenticated/practice'
     | '/_authenticated/pricing'
     | '/_authenticated/'
     | '/.lovable/oauth/consent'
@@ -252,6 +264,13 @@ declare module '@tanstack/react-router' {
       path: '/pricing'
       fullPath: '/pricing'
       preLoaderRoute: typeof AuthenticatedPricingRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/practice': {
+      id: '/_authenticated/practice'
+      path: '/practice'
+      fullPath: '/practice'
+      preLoaderRoute: typeof AuthenticatedPracticeRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/payment': {
@@ -343,6 +362,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedCoursesRoute: typeof AuthenticatedCoursesRouteWithChildren
   AuthenticatedPathsRoute: typeof AuthenticatedPathsRoute
   AuthenticatedPaymentRoute: typeof AuthenticatedPaymentRoute
+  AuthenticatedPracticeRoute: typeof AuthenticatedPracticeRoute
   AuthenticatedPricingRoute: typeof AuthenticatedPricingRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
@@ -352,6 +372,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedCoursesRoute: AuthenticatedCoursesRouteWithChildren,
   AuthenticatedPathsRoute: AuthenticatedPathsRoute,
   AuthenticatedPaymentRoute: AuthenticatedPaymentRoute,
+  AuthenticatedPracticeRoute: AuthenticatedPracticeRoute,
   AuthenticatedPricingRoute: AuthenticatedPricingRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }
