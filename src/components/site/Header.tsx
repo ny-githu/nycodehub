@@ -7,7 +7,6 @@ import { t } from "@/lib/i18n";
 const links = [
   { to: "/courses", label: t.nav_courses },
   { to: "/practice", label: t.nav_practice },
-  { to: "/instructors", label: t.nav_instructors },
   { to: "/payment", label: t.nav_payment, icon: true },
 ] as const;
 
