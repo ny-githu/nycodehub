@@ -5,7 +5,6 @@ export const t = {
   // nav
   nav_courses: "Amasomo",
   nav_practice: "Igirira",
-  nav_instructors: "Abarimu",
   nav_payment: "Kwishyura",
   nav_admin: "Ubuyobozi",
   nav_signin: "Injira",
@@ -71,6 +70,12 @@ export const t = {
   practice_output: "Ibisubizo",
   practice_preview: "Igaragaza",
   practice_thinking: "Aratekereza…",
+  practice_files: "Amadosiye",
+  practice_new_file: "Dosiye nshya",
+  practice_download: "Kuramo umushinga",
+  practice_video_show: "Fungura video y'isomo",
+  practice_video_hide: "Funga video",
+  practice_project_saved: "Umushinga wabitswe kuri mudasobwa yawe",
   practice_pick_course: "Hitamo isomo muri \"Amasomo\" kugira ngo ubonere video iri hano.",
   practice_snippets: "kanda kopa",
   practice_running_server: "Birakorerwa kuri server…",
@@ -164,11 +169,6 @@ export const t = {
   admin_extend_label: "+{n} iminsi",
   admin_set_expiry_prompt: "Itariki konti izarangiraho (YYYY-MM-DD) — wisiga ubusa nta tariki:",
   // footer
-  footer_lead: "Iga gukora porogaramu — mu rwego rwa internet yawe, mu Kinyarwanda.",
-  footer_h_learn: "Iga",
-  footer_h_account: "Konti yanjye",
-  footer_h_news: "Komeza ubikurikirane",
-  footer_news_btn: "Iyandikishe",
   footer_rights: "Uburenganzira bwose burabitswe.",
 } as const;
 

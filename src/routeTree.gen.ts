@@ -17,7 +17,6 @@ import { Route as AuthenticatedPricingRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedPracticeRouteImport } from './routes/_authenticated/practice'
 import { Route as AuthenticatedPaymentRouteImport } from './routes/_authenticated/payment'
 import { Route as AuthenticatedPathsRouteImport } from './routes/_authenticated/paths'
-import { Route as AuthenticatedInstructorsRouteImport } from './routes/_authenticated/instructors'
 import { Route as AuthenticatedCoursesRouteImport } from './routes/_authenticated/courses'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
@@ -66,12 +65,6 @@ const AuthenticatedPathsRoute = AuthenticatedPathsRouteImport.update({
   path: '/paths',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedInstructorsRoute =
-  AuthenticatedInstructorsRouteImport.update({
-    id: '/instructors',
-    path: '/instructors',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
 const AuthenticatedCoursesRoute = AuthenticatedCoursesRouteImport.update({
   id: '/courses',
   path: '/courses',
@@ -125,7 +118,6 @@ export interface FileRoutesByFullPath {
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/courses': typeof AuthenticatedCoursesRouteWithChildren
-  '/instructors': typeof AuthenticatedInstructorsRoute
   '/paths': typeof AuthenticatedPathsRoute
   '/payment': typeof AuthenticatedPaymentRoute
   '/practice': typeof AuthenticatedPracticeRoute
@@ -142,7 +134,6 @@ export interface FileRoutesByTo {
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/courses': typeof AuthenticatedCoursesRouteWithChildren
-  '/instructors': typeof AuthenticatedInstructorsRoute
   '/paths': typeof AuthenticatedPathsRoute
   '/payment': typeof AuthenticatedPaymentRoute
   '/practice': typeof AuthenticatedPracticeRoute
@@ -162,7 +153,6 @@ export interface FileRoutesById {
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/courses': typeof AuthenticatedCoursesRouteWithChildren
-  '/_authenticated/instructors': typeof AuthenticatedInstructorsRoute
   '/_authenticated/paths': typeof AuthenticatedPathsRoute
   '/_authenticated/payment': typeof AuthenticatedPaymentRoute
   '/_authenticated/practice': typeof AuthenticatedPracticeRoute
@@ -183,7 +173,6 @@ export interface FileRouteTypes {
     | '/.well-known/oauth-protected-resource'
     | '/admin'
     | '/courses'
-    | '/instructors'
     | '/paths'
     | '/payment'
     | '/practice'
@@ -200,7 +189,6 @@ export interface FileRouteTypes {
     | '/.well-known/oauth-protected-resource'
     | '/admin'
     | '/courses'
-    | '/instructors'
     | '/paths'
     | '/payment'
     | '/practice'
@@ -219,7 +207,6 @@ export interface FileRouteTypes {
     | '/.well-known/oauth-protected-resource'
     | '/_authenticated/admin'
     | '/_authenticated/courses'
-    | '/_authenticated/instructors'
     | '/_authenticated/paths'
     | '/_authenticated/payment'
     | '/_authenticated/practice'
@@ -300,13 +287,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPathsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/instructors': {
-      id: '/_authenticated/instructors'
-      path: '/instructors'
-      fullPath: '/instructors'
-      preLoaderRoute: typeof AuthenticatedInstructorsRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
     '/_authenticated/courses': {
       id: '/_authenticated/courses'
       path: '/courses'
@@ -380,7 +360,6 @@ const AuthenticatedCoursesRouteWithChildren =
 interface AuthenticatedRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedCoursesRoute: typeof AuthenticatedCoursesRouteWithChildren
-  AuthenticatedInstructorsRoute: typeof AuthenticatedInstructorsRoute
   AuthenticatedPathsRoute: typeof AuthenticatedPathsRoute
   AuthenticatedPaymentRoute: typeof AuthenticatedPaymentRoute
   AuthenticatedPracticeRoute: typeof AuthenticatedPracticeRoute
@@ -391,7 +370,6 @@ interface AuthenticatedRouteChildren {
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedCoursesRoute: AuthenticatedCoursesRouteWithChildren,
-  AuthenticatedInstructorsRoute: AuthenticatedInstructorsRoute,
   AuthenticatedPathsRoute: AuthenticatedPathsRoute,
   AuthenticatedPaymentRoute: AuthenticatedPaymentRoute,
   AuthenticatedPracticeRoute: AuthenticatedPracticeRoute,

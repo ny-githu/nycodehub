@@ -4,60 +4,45 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Editor from "@monaco-editor/react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
+import { strToU8, zipSync } from "fflate";
 import { supabase } from "@/integrations/supabase/client";
 import { runCodeRemote } from "@/lib/code-runner.functions";
 import { askCodeHelper } from "@/lib/codehelper.functions";
-import { Play, Loader2, RefreshCw, Sparkles, X, Terminal as TermIcon, Eye, Send } from "lucide-react";
+import { Download, Eye, FileCode2, FolderPlus, Loader2, Play, Send, Sparkles, Trash2, Video } from "lucide-react";
 import { toast } from "sonner";
 import { t } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/practice")({
-  head: () => ({ meta: [{ title: "Igirira — NYCODEHUB" }] }),
+  head: () => ({ meta: [
+    { title: "Igirira — NYCODEHUB" },
+    { name: "description", content: "Kora umushinga, suzuma code ukoresheje CODEHELPER, hanyuma uwumanure kuri mudasobwa yawe." },
+    { property: "og:title", content: "Igirira — NYCODEHUB" },
+    { property: "og:description", content: "Ahantu ho kwandika, gusuzuma no gukuramo imishinga ya porogaramu." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: Practice,
 });
 
-type LangKey =
-  | "html" | "javascript" | "typescript" | "python"
-  | "c" | "cpp" | "java" | "csharp" | "go" | "rust"
-  | "php" | "ruby" | "kotlin" | "swift" | "bash" | "sql";
-
-const LANGS: { key: LangKey; label: string; monaco: string; sample: string; remote: boolean; pyodide?: boolean; preview?: boolean; hints: string[] }[] = [
-  { key: "html", label: "HTML / CSS / JS", monaco: "html", remote: false, preview: true,
-    sample: `<!DOCTYPE html>\n<html>\n<head><style>\n  body{font-family:system-ui;padding:24px;background:#0b1020;color:#e6e9f0;}\n  h1{color:#8b5cf6;}\n</style></head>\n<body>\n  <h1>Muraho NYCODEHUB 👋</h1>\n  <button onclick="alert('Bigenze neza!')">Kanda</button>\n</body>\n</html>`,
-    hints: ["<h1>Umutwe</h1>", "<button onclick=\"alert('hi')\">Kanda</button>", "<style>body{color:red;}</style>"] },
-  { key: "javascript", label: "JavaScript", monaco: "javascript", remote: false, preview: true,
-    sample: `console.log("Muraho NYCODEHUB");\nfor (let i = 1; i <= 5; i++) console.log(i, i*i);`,
-    hints: ["console.log('hi')", "const x = [1,2,3].map(n => n*2)", "function add(a,b){ return a+b; }"] },
-  { key: "python", label: "Python", monaco: "python", remote: false, pyodide: true,
-    sample: `print("Muraho NYCODEHUB")\nfor i in range(1, 6):\n    print(i, i*i)`,
-    hints: ["print('hi')", "for i in range(10): print(i)", "def add(a,b): return a+b"] },
-  { key: "typescript", label: "TypeScript", monaco: "typescript", remote: true,
-    sample: `const greet = (n: string): string => \`Muraho \${n}\`;\nconsole.log(greet("NYCODEHUB"));`,
-    hints: ["type User = { id: number; name: string }", "const x: number[] = [1,2,3]"] },
-  { key: "c", label: "C", monaco: "c", remote: true,
-    sample: `#include <stdio.h>\nint main(){ printf("Muraho NYCODEHUB!\\n"); return 0; }`,
-    hints: ["printf(\"hi\\n\");", "int x = 5;", "for(int i=0;i<5;i++){ }"] },
-  { key: "cpp", label: "C++", monaco: "cpp", remote: true,
-    sample: `#include <iostream>\nint main(){ std::cout << "Muraho NYCODEHUB!\\n"; }`,
-    hints: ["std::cout << x << std::endl;", "std::vector<int> v = {1,2,3};"] },
-  { key: "java", label: "Java", monaco: "java", remote: true,
-    sample: `public class Main {\n  public static void main(String[] args){\n    System.out.println("Muraho NYCODEHUB!");\n  }\n}`,
-    hints: ["System.out.println(\"hi\");", "int[] arr = {1,2,3};"] },
-  { key: "csharp", label: "C#", monaco: "csharp", remote: true,
-    sample: `using System;\nclass P { static void Main(){ Console.WriteLine("Muraho NYCODEHUB!"); } }`,
-    hints: ["Console.WriteLine(\"hi\");"] },
-  { key: "go", label: "Go", monaco: "go", remote: true,
-    sample: `package main\nimport "fmt"\nfunc main(){ fmt.Println("Muraho NYCODEHUB!") }`,
-    hints: ["fmt.Println(\"hi\")"] },
-  { key: "rust", label: "Rust", monaco: "rust", remote: true,
-    sample: `fn main(){ println!("Muraho NYCODEHUB!"); }`,
-    hints: ["println!(\"hi\");", "let x: i32 = 5;"] },
-  { key: "php", label: "PHP", monaco: "php", remote: true, sample: `<?php echo "Muraho NYCODEHUB!\\n"; ?>`, hints: ["echo 'hi';"] },
-  { key: "ruby", label: "Ruby", monaco: "ruby", remote: true, sample: `puts "Muraho NYCODEHUB!"`, hints: ["puts 'hi'", "[1,2,3].each { |n| puts n }"] },
-  { key: "kotlin", label: "Kotlin", monaco: "kotlin", remote: true, sample: `fun main(){ println("Muraho NYCODEHUB!") }`, hints: ["println(\"hi\")"] },
-  { key: "swift", label: "Swift", monaco: "swift", remote: true, sample: `print("Muraho NYCODEHUB!")`, hints: ["print(\"hi\")"] },
-  { key: "bash", label: "Bash", monaco: "shell", remote: true, sample: `echo "Muraho NYCODEHUB!"\nfor i in 1 2 3; do echo "i=$i"; done`, hints: ["echo $VAR", "for i in 1 2 3; do echo $i; done"] },
-  { key: "sql", label: "SQL", monaco: "sql", remote: true, sample: `SELECT 'Muraho NYCODEHUB' AS greeting;`, hints: ["SELECT * FROM t;", "INSERT INTO t (a) VALUES (1);"] },
+type LangKey = "html" | "javascript" | "typescript" | "python" | "c" | "cpp" | "java" | "csharp" | "go" | "rust" | "php" | "ruby" | "kotlin" | "swift" | "bash" | "sql";
+type ProjectFile = { name: string; content: string };
+const LANGS: { key: LangKey; label: string; monaco: string; file: string; sample: string; remote: boolean; pyodide?: boolean }[] = [
+  { key: "html", label: "HTML / CSS / JS", monaco: "html", file: "index.html", remote: false, sample: `<!DOCTYPE html>\n<html lang="rw">\n<head>\n  <meta charset="UTF-8" />\n  <style>body{font-family:system-ui;padding:32px} h1{color:#7048e8}</style>\n</head>\n<body>\n  <h1>Muraho NYCODEHUB</h1>\n  <button onclick="alert('Bigenze neza!')">Kanda hano</button>\n</body>\n</html>` },
+  { key: "javascript", label: "JavaScript", monaco: "javascript", file: "app.js", remote: false, sample: `console.log("Muraho NYCODEHUB");\nfor (let i = 1; i <= 5; i++) console.log(i, i * i);` },
+  { key: "python", label: "Python", monaco: "python", file: "main.py", remote: false, pyodide: true, sample: `print("Muraho NYCODEHUB")\nfor i in range(1, 6):\n    print(i, i * i)` },
+  { key: "typescript", label: "TypeScript", monaco: "typescript", file: "index.ts", remote: true, sample: `const greet = (name: string): string => \`Muraho \${name}\`;\nconsole.log(greet("NYCODEHUB"));` },
+  { key: "c", label: "C", monaco: "c", file: "main.c", remote: true, sample: `#include <stdio.h>\nint main(){ printf("Muraho NYCODEHUB!\\n"); return 0; }` },
+  { key: "cpp", label: "C++", monaco: "cpp", file: "main.cpp", remote: true, sample: `#include <iostream>\nint main(){ std::cout << "Muraho NYCODEHUB!\\n"; }` },
+  { key: "java", label: "Java", monaco: "java", file: "Main.java", remote: true, sample: `public class Main { public static void main(String[] args){ System.out.println("Muraho NYCODEHUB!"); } }` },
+  { key: "csharp", label: "C#", monaco: "csharp", file: "Program.cs", remote: true, sample: `using System; class Program { static void Main(){ Console.WriteLine("Muraho NYCODEHUB!"); } }` },
+  { key: "go", label: "Go", monaco: "go", file: "main.go", remote: true, sample: `package main\nimport "fmt"\nfunc main(){ fmt.Println("Muraho NYCODEHUB!") }` },
+  { key: "rust", label: "Rust", monaco: "rust", file: "main.rs", remote: true, sample: `fn main(){ println!("Muraho NYCODEHUB!"); }` },
+  { key: "php", label: "PHP", monaco: "php", file: "index.php", remote: true, sample: `<?php echo "Muraho NYCODEHUB!\\n"; ?>` },
+  { key: "ruby", label: "Ruby", monaco: "ruby", file: "main.rb", remote: true, sample: `puts "Muraho NYCODEHUB!"` },
+  { key: "kotlin", label: "Kotlin", monaco: "kotlin", file: "main.kt", remote: true, sample: `fun main(){ println("Muraho NYCODEHUB!") }` },
+  { key: "swift", label: "Swift", monaco: "swift", file: "main.swift", remote: true, sample: `print("Muraho NYCODEHUB!")` },
+  { key: "bash", label: "Bash", monaco: "shell", file: "main.sh", remote: true, sample: `echo "Muraho NYCODEHUB!"\nfor i in 1 2 3; do echo "i=$i"; done` },
+  { key: "sql", label: "SQL", monaco: "sql", file: "query.sql", remote: true, sample: `SELECT 'Muraho NYCODEHUB' AS greeting;` },
 ];
 
 let pyodidePromise: Promise<unknown> | null = null;
@@ -65,328 +50,143 @@ async function loadPyodide() {
   if (pyodidePromise) return pyodidePromise;
   pyodidePromise = (async () => {
     await new Promise<void>((resolve, reject) => {
-      const s = document.createElement("script");
-      s.src = "https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js";
-      s.onload = () => resolve();
-      s.onerror = () => reject(new Error("Pyodide failed to load"));
-      document.head.appendChild(s);
+      const script = document.createElement("script");
+      script.src = "https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js";
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error("Python ntiyashoboye gutangira"));
+      document.head.appendChild(script);
     });
-    // @ts-expect-error global
-    return await window.loadPyodide({ indexURL: "https://cdn.jsdelivr.net/pyodide/v0.26.2/full/" });
+    const runtime = window as Window & { loadPyodide?: (config: { indexURL: string }) => Promise<unknown> };
+    if (!runtime.loadPyodide) throw new Error("Python ntiyabonetse");
+    return runtime.loadPyodide({ indexURL: "https://cdn.jsdelivr.net/pyodide/v0.26.2/full/" });
   })();
   return pyodidePromise;
 }
+const storageKey = (language: LangKey) => `nycodehub:project:${language}`;
 
 function Practice() {
-  const [langKey, setLangKey] = useState<LangKey>(() => {
-    if (typeof window === "undefined") return "html";
-    return (localStorage.getItem("practice:lang") as LangKey) || "html";
-  });
-  const lang = useMemo(() => LANGS.find((l) => l.key === langKey)!, [langKey]);
-  const [code, setCode] = useState(() => {
-    if (typeof window === "undefined") return lang.sample;
-    return localStorage.getItem(`practice:code:${langKey}`) ?? lang.sample;
-  });
+  const [mounted, setMounted] = useState(false);
+  const [langKey, setLangKey] = useState<LangKey>("html");
+  const lang = useMemo(() => LANGS.find((item) => item.key === langKey) ?? LANGS[0], [langKey]);
+  const [files, setFiles] = useState<ProjectFile[]>([{ name: "index.html", content: LANGS[0].sample }]);
+  const [activeName, setActiveName] = useState("index.html");
   const [output, setOutput] = useState("");
   const [previewHtml, setPreviewHtml] = useState("");
   const [running, setRunning] = useState(false);
   const [autorun, setAutorun] = useState(true);
-  const [helperOpen, setHelperOpen] = useState(true);
-  const [mounted, setMounted] = useState(false);
+  const [videoOpen, setVideoOpen] = useState(false);
+  const debounceRef = useRef<number | null>(null);
   const runRemote = useServerFn(runCodeRemote);
   const askHelper = useServerFn(askCodeHelper);
-  const debounceRef = useRef<number | null>(null);
+  const activeFile = files.find((file) => file.name === activeName) ?? files[0];
+  const code = activeFile?.content ?? "";
 
-  useEffect(() => { setMounted(true); }, []);
   useEffect(() => {
-    localStorage.setItem("practice:lang", langKey);
-    const saved = localStorage.getItem(`practice:code:${langKey}`);
-    setCode(saved ?? lang.sample);
-    setOutput(""); setPreviewHtml("");
-  }, [langKey]);
+    setMounted(true);
+    const savedLanguage = localStorage.getItem("practice:lang") as LangKey | null;
+    if (savedLanguage && LANGS.some((item) => item.key === savedLanguage)) setLangKey(savedLanguage);
+  }, []);
   useEffect(() => {
     if (!mounted) return;
-    localStorage.setItem(`practice:code:${langKey}`, code);
-  }, [code, langKey, mounted]);
+    localStorage.setItem("practice:lang", langKey);
+    const saved = localStorage.getItem(storageKey(langKey));
+    try {
+      const parsed = saved ? JSON.parse(saved) as ProjectFile[] : null;
+      const next = parsed?.length ? parsed : [{ name: lang.file, content: lang.sample }];
+      setFiles(next); setActiveName(next[0].name);
+    } catch { setFiles([{ name: lang.file, content: lang.sample }]); setActiveName(lang.file); }
+    setOutput(""); setPreviewHtml("");
+  }, [langKey, lang, mounted]);
+  useEffect(() => { if (mounted) localStorage.setItem(storageKey(langKey), JSON.stringify(files)); }, [files, langKey, mounted]);
 
+  function updateCode(value: string) { setFiles((current) => current.map((file) => file.name === activeName ? { ...file, content: value } : file)); }
+  function createFile() {
+    const proposed = window.prompt("Andika izina rya dosiye, urugero: styles.css");
+    const name = proposed?.trim().replace(/^\/+/, "");
+    if (!name) return;
+    if (files.some((file) => file.name === name)) return toast.error("Iyo dosiye isanzwe ihari");
+    setFiles((current) => [...current, { name, content: "" }]); setActiveName(name);
+  }
+  function deleteFile(name: string) {
+    if (files.length === 1) return toast.error("Umushinga ugomba kugira nibura dosiye imwe");
+    const next = files.filter((file) => file.name !== name); setFiles(next);
+    if (activeName === name) setActiveName(next[0].name);
+  }
+  function downloadProject() {
+    const archive = zipSync(Object.fromEntries(files.map((file) => [file.name, strToU8(file.content)])));
+    const url = URL.createObjectURL(new Blob([archive], { type: "application/zip" }));
+    const anchor = document.createElement("a"); anchor.href = url; anchor.download = `nycodehub-${langKey}-project.zip`; anchor.click(); URL.revokeObjectURL(url);
+    toast.success(t.practice_project_saved);
+  }
+  function buildWebPreview() {
+    const html = files.find((file) => file.name.endsWith(".html"));
+    const css = files.filter((file) => file.name.endsWith(".css")).map((file) => file.content).join("\n");
+    const js = files.filter((file) => file.name.endsWith(".js")).map((file) => file.content).join("\n");
+    if (html) return html.content.replace("</head>", `<style>${css}</style></head>`).replace("</body>", `<script>${js}<\/script></body>`);
+    return `<!doctype html><html><head><style>${css}</style></head><body><script>${js}<\/script></body></html>`;
+  }
   async function run() {
-    setRunning(true);
-    setOutput("");
+    setRunning(true); setOutput("");
     try {
-      if (lang.key === "html") {
-        setPreviewHtml(code);
-        setOutput("✓ preview");
-      } else if (lang.key === "javascript") {
-        const wrapper = `<!doctype html><html><body><script>
-          const _log = [];
-          ["log","error","warn","info"].forEach(k => {
-            const o = console[k];
-            console[k] = (...a) => { _log.push(k+": "+a.map(x=>typeof x==='object'?JSON.stringify(x):String(x)).join(' ')); o(...a); };
-          });
-          window.addEventListener("error", e => _log.push("error: "+e.message));
-          try { ${code} } catch(e) { _log.push("error: "+e.message); }
-          parent.postMessage({ __jsout: _log.join("\\n") }, "*");
-        </script></body></html>`;
-        const handler = (e: MessageEvent) => {
-          if (e.data?.__jsout !== undefined) { setOutput(e.data.__jsout || "(nta output)"); window.removeEventListener("message", handler); }
-        };
-        window.addEventListener("message", handler);
-        setPreviewHtml(wrapper);
+      if (lang.key === "html") { setPreviewHtml(buildWebPreview()); setOutput("✓ Igaragaza ryavuguruwe"); }
+      else if (lang.key === "javascript") {
+        const script = files.filter((file) => file.name.endsWith(".js")).map((file) => file.content).join("\n") || code;
+        const wrapper = `<!doctype html><html><body><script>const logs=[];["log","error","warn"].forEach(k=>{const original=console[k];console[k]=(...a)=>{logs.push(k+": "+a.map(String).join(" "));original(...a)}});try{${script}}catch(error){logs.push("error: "+error.message)};parent.postMessage({nycodehubOutput:logs.join("\\n")},"*")<\/script></body></html>`;
+        const handler = (event: MessageEvent) => { if (typeof event.data?.nycodehubOutput === "string") { setOutput(event.data.nycodehubOutput || t.practice_no_output); window.removeEventListener("message", handler); } };
+        window.addEventListener("message", handler); setPreviewHtml(wrapper);
       } else if (lang.pyodide) {
-        setOutput("Python iratangira…");
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const py: any = await loadPyodide();
-        const buf: string[] = [];
-        py.setStdout({ batched: (s: string) => buf.push(s) });
-        py.setStderr({ batched: (s: string) => buf.push(s) });
-        try { await py.runPythonAsync(code); setOutput(buf.join("\n") || "(nta output)"); }
-        catch (e) { setOutput((buf.join("\n") + "\n" + (e instanceof Error ? e.message : String(e))).trim()); }
+        setOutput(t.practice_python_starting);
+        const py = await loadPyodide() as { setStdout: (options: { batched: (value: string) => void }) => void; setStderr: (options: { batched: (value: string) => void }) => void; runPythonAsync: (value: string) => Promise<unknown> };
+        const buffer: string[] = []; py.setStdout({ batched: (value) => buffer.push(value) }); py.setStderr({ batched: (value) => buffer.push(value) });
+        try { await py.runPythonAsync(code); setOutput(buffer.join("\n") || t.practice_no_output); } catch (error) { setOutput(`${buffer.join("\n")}\n${error instanceof Error ? error.message : String(error)}`.trim()); }
       } else if (lang.remote) {
-        setOutput("Birakorerwa kuri server…");
-        const res = await runRemote({ data: { language: lang.key, source: code } });
-        setOutput([res.stdout, res.stderr].filter(Boolean).join("\n") || `(${res.status})`);
+        setOutput(t.practice_running_server); const result = await runRemote({ data: { language: lang.key, source: code } }); setOutput([result.stdout, result.stderr].filter(Boolean).join("\n") || `(${result.status})`);
       }
-    } catch (e) {
-      setOutput(e instanceof Error ? e.message : "Run failed");
-    } finally { setRunning(false); }
+    } catch (error) { setOutput(error instanceof Error ? error.message : "Byanze gukora"); } finally { setRunning(false); }
   }
-
-  // Auto-run for instant-preview languages (html/js) with debounce
   useEffect(() => {
-    if (!autorun) return;
-    if (lang.key !== "html" && lang.key !== "javascript") return;
+    if (!autorun || (lang.key !== "html" && lang.key !== "javascript")) return;
     if (debounceRef.current) window.clearTimeout(debounceRef.current);
-    debounceRef.current = window.setTimeout(() => { run(); }, 500);
+    debounceRef.current = window.setTimeout(() => { void run(); }, 450);
     return () => { if (debounceRef.current) window.clearTimeout(debounceRef.current); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [code, langKey, autorun]);
+  }, [files, langKey, autorun]);
 
-  return (
-    <Layout>
-      <div className="container mx-auto max-w-[1600px] px-3 md:px-5 py-5">
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-3 animate-fade-in">
-          <div>
-            <div className="font-mono text-xs text-primary-glow">/ practice / lab</div>
-            <h1 className="mt-1 text-xl md:text-2xl font-bold">{t.practice_h1}</h1>
-            <p className="text-xs text-muted-foreground">{t.practice_subtitle}</p>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <select
-              value={langKey}
-              onChange={(e) => setLangKey(e.target.value as LangKey)}
-              className="px-2 py-1.5 rounded bg-surface border border-border text-sm font-mono"
-            >
-              {LANGS.map((l) => <option key={l.key} value={l.key}>{l.label}</option>)}
-            </select>
-            <label className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-              <input type="checkbox" checked={autorun} onChange={(e) => setAutorun(e.target.checked)} />
-              {t.practice_autorun}
-            </label>
-            <button onClick={run} disabled={running} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-gradient-primary text-primary-foreground text-sm font-medium shadow-glow disabled:opacity-60 hover-scale">
-              {running ? <Loader2 className="size-4 animate-spin" /> : <Play className="size-4" />} {t.practice_run}
-            </button>
-            <button onClick={() => { setCode(lang.sample); setOutput(""); setPreviewHtml(""); }} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-surface text-sm border border-border hover-scale">
-              <RefreshCw className="size-3.5" /> {t.practice_reset}
-            </button>
-            <button
-              onClick={() => setHelperOpen((o) => !o)}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-sm border hover-scale ${helperOpen ? "bg-primary/15 border-primary/40 text-primary-glow" : "bg-surface border-border text-muted-foreground"}`}
-            >
-              <Sparkles className="size-3.5" /> {helperOpen ? t.practice_helper_off : t.practice_helper_on}
-            </button>
-          </div>
+  return <Layout><div className="mx-auto max-w-[1800px] px-3 py-4 md:px-5">
+    <header className="mb-3 flex flex-wrap items-center justify-between gap-3 animate-fade-in"><div><h1 className="text-xl font-bold md:text-2xl">{t.practice_h1}</h1><p className="text-xs text-muted-foreground">Kora umushinga wawe, CODEHELPER iwusuzume, uwumanure igihe urangije.</p></div><div className="flex flex-wrap items-center gap-2">
+      <select value={langKey} onChange={(event) => setLangKey(event.target.value as LangKey)} className="rounded border border-border bg-surface px-2 py-2 text-sm font-mono">{LANGS.map((item) => <option key={item.key} value={item.key}>{item.label}</option>)}</select>
+      <label className="inline-flex items-center gap-1.5 text-xs text-muted-foreground"><input type="checkbox" checked={autorun} onChange={(event) => setAutorun(event.target.checked)} />{t.practice_autorun}</label>
+      <button onClick={() => setVideoOpen((open) => !open)} className="inline-flex items-center gap-1.5 rounded border border-border bg-surface px-3 py-2 text-xs hover:border-primary/60"><Video className="size-4" />{videoOpen ? t.practice_video_hide : t.practice_video_show}</button>
+      <button onClick={downloadProject} className="inline-flex items-center gap-1.5 rounded bg-gradient-primary px-3 py-2 text-xs font-medium text-primary-foreground shadow-glow"><Download className="size-4" />{t.practice_download}</button>
+    </div></header>
+    {videoOpen && <div className="mb-3 animate-slide-up"><PracticeVideo /></div>}
+    <div className="grid min-h-[calc(100vh-150px)] gap-3 md:grid-cols-[minmax(0,2fr)_minmax(290px,0.8fr)]">
+      <section className="grid min-w-0 overflow-hidden rounded-lg border border-border bg-surface md:grid-cols-[150px_minmax(0,1fr)]">
+        <aside className="border-b border-border bg-background/60 md:border-b-0 md:border-r"><div className="flex h-10 items-center justify-between border-b border-border px-2"><span className="text-xs font-semibold uppercase text-muted-foreground">{t.practice_files}</span><button onClick={createFile} title={t.practice_new_file} className="rounded p-1.5 text-muted-foreground hover:bg-surface hover:text-foreground"><FolderPlus className="size-4" /></button></div><div className="flex gap-1 overflow-x-auto p-1 md:block md:overflow-visible">{files.map((file) => <div key={file.name} className={`group flex min-w-max items-center gap-1 rounded px-2 py-2 text-xs font-mono md:min-w-0 ${activeName === file.name ? "bg-primary/15 text-primary-glow" : "text-muted-foreground hover:bg-surface"}`}><button onClick={() => setActiveName(file.name)} className="flex min-w-0 flex-1 items-center gap-1.5"><FileCode2 className="size-3.5 shrink-0" /><span className="truncate">{file.name}</span></button><button onClick={() => deleteFile(file.name)} title={t.delete} className="opacity-60 hover:text-destructive md:opacity-0 md:group-hover:opacity-100"><Trash2 className="size-3" /></button></div>)}</div></aside>
+        <div className="grid min-h-[680px] min-w-0 grid-rows-[minmax(350px,1fr)_260px]"><div className="min-h-0 bg-surface-elevated"><div className="flex h-10 items-center justify-between border-b border-border px-3"><span className="text-xs font-mono text-muted-foreground">{activeName}</span><button onClick={() => void run()} disabled={running} className="inline-flex items-center gap-1.5 rounded bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-60">{running ? <Loader2 className="size-3.5 animate-spin" /> : <Play className="size-3.5" />}{t.practice_run}</button></div>{mounted && activeFile && <Editor height="calc(100% - 40px)" theme="vs-dark" path={activeFile.name} language={lang.monaco} value={activeFile.content} onChange={(value) => updateCode(value ?? "")} options={{ fontSize: 14, minimap: { enabled: false }, fontFamily: "JetBrains Mono, monospace", automaticLayout: true, tabSize: 2, scrollBeyondLastLine: false }} />}</div>
+          <div className="grid min-h-0 border-t border-border lg:grid-cols-2"><div className="min-h-0 border-b border-border lg:border-b-0 lg:border-r"><div className="flex h-9 items-center gap-2 border-b border-border px-3 text-xs text-muted-foreground"><Eye className="size-3.5 text-primary-glow" />{t.practice_preview}</div><iframe title={t.practice_preview} sandbox="allow-scripts allow-modals" srcDoc={previewHtml || "<html><body style='font-family:system-ui;padding:24px;color:#777'>Igaragaza rizaza hano</body></html>"} className="h-[220px] w-full bg-white" /></div><div className="min-h-0 bg-background/80"><div className="flex h-9 items-center border-b border-border px-3 text-xs text-muted-foreground">{t.practice_output}</div><pre className="h-[220px] overflow-auto p-3 text-xs font-mono whitespace-pre-wrap">{output || t.practice_no_output}</pre></div></div>
         </div>
-
-        {/* Three columns: video | editor+output | helper */}
-        <div className={`grid gap-3 ${helperOpen ? "lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_320px]" : "lg:grid-cols-2"} min-h-[80vh]`}>
-          {/* VIDEO column */}
-          <PracticeVideoColumn lang={lang} />
-
-
-          {/* EDITOR + OUTPUT column */}
-          <div className="flex flex-col gap-2">
-            <div className="rounded-xl border border-border overflow-hidden bg-[#1e1e1e] flex-1 min-h-[380px]">
-              {mounted && (
-                <Editor
-                  height="100%"
-                  theme="vs-dark"
-                  language={lang.monaco}
-                  value={code}
-                  onChange={(v) => setCode(v ?? "")}
-                  options={{
-                    fontSize: 14, minimap: { enabled: false },
-                    fontFamily: "JetBrains Mono, monospace",
-                    automaticLayout: true, tabSize: 2, scrollBeyondLastLine: false,
-                  }}
-                />
-              )}
-            </div>
-            {(lang.preview || lang.key === "javascript") && (
-              <div className="rounded-xl border border-border bg-white overflow-hidden h-[260px]">
-                <div className="flex items-center gap-2 px-3 py-2 border-b border-border bg-surface">
-                  <Eye className="size-3.5 text-primary-glow" />
-                  <span className="text-xs font-mono text-muted-foreground">{t.practice_preview}</span>
-                </div>
-                <iframe
-                  title="preview"
-                  sandbox="allow-scripts allow-modals"
-                  srcDoc={previewHtml || "<html><body style='font-family:system-ui;padding:24px;color:#888'>Press Run…</body></html>"}
-                  className="w-full h-[220px] bg-white"
-                />
-              </div>
-            )}
-            <div className="rounded-xl border border-border bg-[oklch(0.10_0.04_270)] overflow-hidden">
-              <div className="flex items-center gap-2 px-3 py-2 border-b border-border bg-surface">
-                <TermIcon className="size-3.5 text-primary-glow" />
-                <span className="text-xs font-mono text-muted-foreground">{t.practice_output}</span>
-              </div>
-              <pre className="p-4 text-sm font-mono whitespace-pre-wrap overflow-auto max-h-[240px] min-h-[100px] text-foreground">
-                {output || <span className="text-muted-foreground">{t.practice_output}…</span>}
-              </pre>
-            </div>
-          </div>
-
-          {/* HELPER column */}
-          {helperOpen && <CodeHelperPanel language={lang.key} code={code} askHelper={askHelper} onClose={() => setHelperOpen(false)} />}
-        </div>
-      </div>
-    </Layout>
-  );
-}
-
-function CodeHelperPanel({
-  language, code, askHelper, onClose,
-}: {
-  language: string;
-  code: string;
-  askHelper: (args: { data: { language: string; code: string; question: string } }) => Promise<{ answer: string }>;
-  onClose: () => void;
-}) {
-  const [question, setQuestion] = useState("");
-  const [thread, setThread] = useState<{ q: string; a: string }[]>([]);
-  const [pending, setPending] = useState(false);
-
-  async function ask() {
-    const q = question.trim();
-    if (!q || pending) return;
-    setPending(true);
-    setQuestion("");
-    try {
-      const { answer } = await askHelper({ data: { language, code, question: q } });
-      setThread((t) => [...t, { q, a: answer }]);
-    } catch (e) {
-      setThread((t) => [...t, { q, a: e instanceof Error ? e.message : "Error" }]);
-    } finally { setPending(false); }
-  }
-
-  return (
-    <aside className="rounded-xl border border-primary/30 bg-gradient-card flex flex-col min-h-[400px] animate-scale-in">
-      <header className="flex items-center justify-between px-3 py-2 border-b border-border">
-        <div className="flex items-center gap-2">
-          <Sparkles className="size-4 text-primary-glow" />
-          <span className="font-semibold text-sm">{t.practice_helper}</span>
-        </div>
-        <button onClick={onClose} className="p-1 hover:bg-surface rounded text-muted-foreground"><X className="size-4" /></button>
-      </header>
-      <div className="flex-1 overflow-y-auto p-3 space-y-3 text-sm">
-        {thread.length === 0 ? (
-          <p className="text-muted-foreground">{t.practice_helper_intro}</p>
-        ) : (
-          thread.map((m, i) => (
-            <div key={i} className="space-y-1 animate-fade-in">
-              <div className="font-mono text-xs text-primary-glow">› {m.q}</div>
-              <div className="text-sm whitespace-pre-wrap text-foreground/90 bg-surface/50 rounded-md p-2 border border-border/50">{m.a}</div>
-            </div>
-          ))
-        )}
-        {pending && <div className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="size-3 animate-spin" /> {t.practice_thinking}</div>}
-      </div>
-      <form
-        onSubmit={(e) => { e.preventDefault(); ask(); }}
-        className="p-2 border-t border-border flex gap-2"
-      >
-        <input
-          value={question}
-          onChange={(e) => setQuestion(e.target.value)}
-          placeholder={t.practice_helper_placeholder}
-          className="flex-1 px-2 py-1.5 rounded bg-surface border border-border text-sm"
-        />
-        <button type="submit" disabled={pending || !question.trim()} className="px-3 py-1.5 rounded bg-gradient-primary text-primary-foreground text-sm disabled:opacity-60">
-          <Send className="size-3.5" />
-        </button>
-      </form>
-    </aside>
-  );
-}
-
-type LangDef = (typeof LANGS)[number];
-
-function PracticeVideoColumn({ lang }: { lang: LangDef }) {
-  const [courseId, setCourseId] = useState<string>("");
-  const [videoId, setVideoId] = useState<string>("");
-
-  const { data: courses } = useQuery({
-    queryKey: ["practice-courses"],
-    queryFn: async () => {
-      const { data } = await supabase.from("courses").select("id, title, slug, track").order("title");
-      return data ?? [];
-    },
-  });
-
-  const { data: videos } = useQuery({
-    queryKey: ["practice-videos", courseId],
-    enabled: !!courseId,
-    queryFn: async () => {
-      const { data } = await supabase.from("course_videos").select("*").eq("course_id", courseId).order("sort_order").order("created_at");
-      return data ?? [];
-    },
-  });
-
-  useEffect(() => { if (videos && videos.length && !videos.find(v => v.id === videoId)) setVideoId(videos[0].id); }, [videos, videoId]);
-
-  const active = videos?.find(v => v.id === videoId);
-  const url = active?.video_url ?? (active?.storage_path ? supabase.storage.from("course-videos").getPublicUrl(active.storage_path).data.publicUrl : null);
-  const yt = url?.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([\w-]{11})/);
-
-  return (
-    <div className="flex flex-col gap-2">
-      <div className="flex gap-1.5">
-        <select value={courseId} onChange={(e) => { setCourseId(e.target.value); setVideoId(""); }} className="flex-1 px-2 py-1.5 rounded bg-surface border border-border text-xs font-mono">
-          <option value="">— {t.nav_courses} —</option>
-          {(courses ?? []).map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
-        </select>
-        <select value={videoId} onChange={(e) => setVideoId(e.target.value)} disabled={!videos?.length} className="flex-1 px-2 py-1.5 rounded bg-surface border border-border text-xs font-mono disabled:opacity-50">
-          <option value="">— video —</option>
-          {(videos ?? []).map((v) => <option key={v.id} value={v.id}>{v.topic} · {v.title}</option>)}
-        </select>
-      </div>
-      <div className="relative rounded-xl overflow-hidden border border-border bg-black aspect-video shadow-elevated animate-scale-in">
-        {url ? (
-          yt ? (
-            <iframe src={`https://www.youtube.com/embed/${yt[1]}`} title={active?.title} className="w-full h-full" allow="autoplay; encrypted-media; picture-in-picture" allowFullScreen />
-          ) : (
-            <video key={active!.id} src={url} controls className="w-full h-full bg-black" />
-          )
-        ) : (
-          <div className="absolute inset-0 grid place-items-center text-center px-4 bg-gradient-to-br from-primary/20 via-background to-accent/20">
-            <div className="text-xs text-muted-foreground">{t.practice_pick_course}</div>
-          </div>
-        )}
-      </div>
-      <div className="rounded-xl border border-border bg-gradient-card p-3">
-        <h3 className="font-semibold text-xs mb-2 flex items-center gap-2">
-          <span className="font-mono text-primary-glow">{t.practice_snippets}</span>
-        </h3>
-        <div className="space-y-1.5">
-          {lang.hints.map((s) => (
-            <button
-              key={s}
-              onClick={() => { navigator.clipboard.writeText(s); toast.success(t.copied); }}
-              className="w-full text-left px-2.5 py-1.5 text-xs font-mono bg-surface hover:bg-surface/70 border border-border rounded truncate"
-            >{s}</button>
-          ))}
-        </div>
-      </div>
+      </section>
+      <CodeHelperPanel language={lang.key} files={files} askHelper={askHelper} />
     </div>
-  );
+  </div></Layout>;
+}
+
+function CodeHelperPanel({ language, files, askHelper }: { language: string; files: ProjectFile[]; askHelper: (args: { data: { language: string; code: string; question: string } }) => Promise<{ answer: string }> }) {
+  const [question, setQuestion] = useState(""); const [thread, setThread] = useState<{ question: string; answer: string }[]>([]); const [pending, setPending] = useState(false);
+  async function ask() {
+    const prompt = question.trim(); if (!prompt || pending) return; setPending(true); setQuestion("");
+    const projectCode = files.map((file) => `DOSIYE: ${file.name}\n${file.content}`).join("\n\n");
+    try { const result = await askHelper({ data: { language, code: projectCode, question: prompt } }); setThread((current) => [...current, { question: prompt, answer: result.answer }]); }
+    catch (error) { setThread((current) => [...current, { question: prompt, answer: error instanceof Error ? error.message : "Byanze" }]); } finally { setPending(false); }
+  }
+  return <aside className="flex min-h-[580px] flex-col overflow-hidden rounded-lg border border-primary/30 bg-gradient-card shadow-elevated animate-scale-in"><header className="flex h-12 items-center gap-2 border-b border-border px-4"><span className="grid size-7 place-items-center rounded bg-gradient-primary"><Sparkles className="size-4 text-primary-foreground" /></span><div><div className="text-sm font-semibold">{t.practice_helper}</div><div className="text-[10px] text-muted-foreground">Isuzuma amadosiye yose y'umushinga</div></div></header><div className="flex-1 space-y-4 overflow-y-auto p-3 text-sm">{thread.length === 0 && <div className="rounded border border-border bg-surface/60 p-3 text-muted-foreground"><p>{t.practice_helper_intro}</p><button onClick={() => setQuestion("Suzuma umushinga wanjye, umbwire amakosa n'icyo nakosora.")} className="mt-3 text-left text-xs text-primary-glow hover:underline">Suzuma amakosa yose ari muri uyu mushinga →</button></div>}{thread.map((message, index) => <div key={`${message.question}-${index}`} className="space-y-2 animate-slide-up"><div className="ml-6 rounded bg-primary/15 p-2 text-xs text-primary-glow">{message.question}</div><div className="whitespace-pre-wrap rounded border border-border bg-surface/70 p-3 leading-relaxed">{message.answer}</div></div>)}{pending && <div className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="size-3.5 animate-spin" />{t.practice_thinking}</div>}</div><form onSubmit={(event) => { event.preventDefault(); void ask(); }} className="border-t border-border p-3"><textarea value={question} onChange={(event) => setQuestion(event.target.value)} placeholder={t.practice_helper_placeholder} rows={3} className="w-full resize-none rounded border border-border bg-surface p-2 text-sm outline-none focus:border-primary" /><button type="submit" disabled={pending || !question.trim()} className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded bg-gradient-primary px-3 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"><Send className="size-4" />{t.practice_helper_ask}</button></form></aside>;
+}
+
+function PracticeVideo() {
+  const [courseId, setCourseId] = useState(""); const [videoId, setVideoId] = useState("");
+  const { data: courses } = useQuery({ queryKey: ["practice-courses"], queryFn: async () => { const { data } = await supabase.from("courses").select("id, title").order("title"); return data ?? []; } });
+  const { data: videos } = useQuery({ queryKey: ["practice-videos", courseId], enabled: Boolean(courseId), queryFn: async () => { const { data } = await supabase.from("course_videos").select("*").eq("course_id", courseId).order("sort_order").order("created_at"); return data ?? []; } });
+  useEffect(() => { if (videos?.length && !videos.some((video) => video.id === videoId)) setVideoId(videos[0].id); }, [videos, videoId]);
+  const active = videos?.find((video) => video.id === videoId); const url = active?.video_url ?? (active?.storage_path ? supabase.storage.from("course-videos").getPublicUrl(active.storage_path).data.publicUrl : null); const youtube = url?.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([\w-]{11})/);
+  return <section className="grid gap-3 rounded-lg border border-border bg-surface p-3 lg:grid-cols-[300px_minmax(0,1fr)]"><div className="space-y-2"><select value={courseId} onChange={(event) => { setCourseId(event.target.value); setVideoId(""); }} className="w-full rounded border border-border bg-background px-2 py-2 text-xs"><option value="">Hitamo isomo</option>{courses?.map((course) => <option key={course.id} value={course.id}>{course.title}</option>)}</select><select value={videoId} onChange={(event) => setVideoId(event.target.value)} className="w-full rounded border border-border bg-background px-2 py-2 text-xs" disabled={!videos?.length}><option value="">Hitamo video</option>{videos?.map((video) => <option key={video.id} value={video.id}>{video.topic} · {video.title}</option>)}</select><p className="text-xs text-muted-foreground">Video ni inyongera. Workspace na CODEHELPER bikomeza kuba ah'ingenzi.</p></div><div className="aspect-video max-h-[330px] overflow-hidden rounded border border-border bg-background">{url ? youtube ? <iframe src={`https://www.youtube.com/embed/${youtube[1]}`} title={active?.title ?? "Video"} className="h-full w-full" allowFullScreen /> : <video src={url} controls className="h-full w-full" /> : <div className="grid h-full place-items-center text-xs text-muted-foreground">Hitamo isomo na video</div>}</div></section>;
 }
