@@ -122,7 +122,7 @@ function Home() {
         </div>
       </section>
 
-      <section className="container mx-auto max-w-7xl px-6 pb-24 -mt-6">
+      <section className="container mx-auto max-w-7xl px-6 pb-24 pt-2">
         <div className="flex flex-wrap gap-2 justify-center">
           {LANGS.map((l) => (
             <button
