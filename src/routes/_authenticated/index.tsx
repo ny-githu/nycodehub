@@ -107,18 +107,15 @@ function Home() {
     <Layout>
       <section className="relative overflow-hidden bg-hero">
         <div className="absolute inset-0 grid-bg opacity-30" />
-        <div className="relative container mx-auto max-w-7xl px-6 pt-16 pb-10 text-center">
+        <div className="relative container mx-auto max-w-7xl px-6 pt-16 pb-16 text-center">
           <h1 className="text-4xl md:text-6xl font-bold tracking-tight font-mono">
             {"WELCOME TO ".split("").map((c, i) => (
               <span key={i} className="logo-letter inline-block whitespace-pre" style={{ animationDelay: `${i * 45}ms` }}>{c}</span>
             ))}
-            <span className="text-gradient">
-              {"NYCODEHUB".split("").map((c, i) => (
-                <span key={i} className="logo-letter inline-block" style={{ animationDelay: `${(i + 11) * 45}ms` }}>{c}</span>
-              ))}
-            </span>
+            <span className="text-gradient animate-scale-in inline-block">NYCODEHUB</span>
             <span className="text-primary-glow caret-blink">_</span>
           </h1>
+
           <p className="mt-5 text-muted-foreground max-w-2xl mx-auto animate-slide-up">
             Hitamo ururimi rwa porogaramu maze urebe imishinga ushobora gukora ubu, mu CODEROOM.
           </p>
