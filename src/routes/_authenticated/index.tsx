@@ -1,130 +1,176 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
 import { Layout } from "@/components/site/Layout";
-import { Code2, Terminal, Cpu, GitBranch, Database, Sparkles, ArrowRight, Play } from "lucide-react";
+import { ArrowRight, Code2, Play } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
     meta: [
-      { title: "NYCODEHUB — Learn coding by doing, in your browser" },
-      { name: "description", content: "Hands-on courses and a TryHackMe-style practice lab for coding, software engineering, DevOps, and more." },
-      { property: "og:title", content: "NYCODEHUB — Learn coding by doing" },
-      { property: "og:description", content: "Hands-on courses and a TryHackMe-style practice lab for software engineering." },
+      { title: "Murakaza neza — NYCODEHUB" },
+      { name: "description", content: "Hitamo ururimi rwa porogaramu maze urebe imishinga ushobora gukora muri CODEROOM ya NYCODEHUB." },
+      { property: "og:title", content: "WELCOME TO NYCODEHUB" },
+      { property: "og:description", content: "Hitamo ururimi rwa porogaramu urebe imishinga ushobora gukora." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: Home,
 });
 
-const tracks = [
-  { icon: Code2, title: "Frontend Engineering", desc: "React, TypeScript, design systems, accessibility.", count: "24 courses" },
-  { icon: Database, title: "Backend & APIs", desc: "Node, Postgres, REST, queues, observability.", count: "18 courses" },
-  { icon: GitBranch, title: "DevOps & Cloud", desc: "Docker, Kubernetes, CI/CD, AWS fundamentals.", count: "12 courses" },
-  { icon: Cpu, title: "Systems & Algorithms", desc: "Data structures, performance, low-level thinking.", count: "16 courses" },
-  { icon: Terminal, title: "Linux & Shell", desc: "Bash, scripting, networking, daily workflows.", count: "9 courses" },
-  { icon: Sparkles, title: "AI Engineering", desc: "LLMs, embeddings, RAG, agents in production.", count: "11 courses" },
+type Lang = { key: string; label: string; color: string; projects: { title: string; desc: string }[] };
+
+const LANGS: Lang[] = [
+  {
+    key: "html",
+    label: "HTML / CSS / JS",
+    color: "from-orange-500/30 to-orange-500/5",
+    projects: [
+      { title: "Urubuga rwawe bwite", desc: "Page igaragaza amazina yawe, amafoto n'aho bakugeraho." },
+      { title: "Ubucuruzi bworoshye", desc: "Ipaji y'ibicuruzwa hamwe na cart ikoresha JavaScript." },
+      { title: "Umukino wa Quiz", desc: "Ibibazo n'amanota abarwa ako kanya." },
+      { title: "Calculator", desc: "Imibare y'ibanze ukoresheje buttons na JS." },
+    ],
+  },
+  {
+    key: "python",
+    label: "Python",
+    color: "from-blue-500/30 to-blue-500/5",
+    projects: [
+      { title: "Bot yo kubara", desc: "Porogaramu isubiza ibibazo by'imibare muri terminal." },
+      { title: "Gusesengura amakuru", desc: "Soma amadata, ubare impuzandengo n'ibipimo." },
+      { title: "Umukino Guess Number", desc: "Ukina n'umubare uhishe ukoresheje random." },
+      { title: "Automation script", desc: "Hindura amazina y'amadosiye byikoresha." },
+    ],
+  },
+  {
+    key: "javascript",
+    label: "JavaScript",
+    color: "from-yellow-500/30 to-yellow-500/5",
+    projects: [
+      { title: "To-do list", desc: "Ongeraho, siba kandi ubike imirimo yawe." },
+      { title: "API client", desc: "Kurura amakuru kuri interineti uyagaragaze." },
+      { title: "Umukino wa Snake", desc: "Canvas, keyboard events n'amanota." },
+    ],
+  },
+  {
+    key: "typescript",
+    label: "TypeScript",
+    color: "from-sky-500/30 to-sky-500/5",
+    projects: [
+      { title: "Sisitemu y'ibaruramari", desc: "Types zikomeye ku bicuruzwa n'ubwishyu." },
+      { title: "Library nto", desc: "Kora utility functions zifite types." },
+    ],
+  },
+  {
+    key: "java",
+    label: "Java",
+    color: "from-red-500/30 to-red-500/5",
+    projects: [
+      { title: "Banki yoroshye", desc: "Konti, kubitsa no kubikuza ukoresheje classes." },
+      { title: "Gucunga abanyeshuri", desc: "Amazina, amanota n'ibarurishamibare." },
+    ],
+  },
+  {
+    key: "c",
+    label: "C / C++",
+    color: "from-indigo-500/30 to-indigo-500/5",
+    projects: [
+      { title: "Algorithms", desc: "Sorting, searching na pointers." },
+      { title: "Sisitemu y'ububiko", desc: "Structs, arrays no gusoma amadosiye." },
+    ],
+  },
+  {
+    key: "sql",
+    label: "SQL",
+    color: "from-emerald-500/30 to-emerald-500/5",
+    projects: [
+      { title: "Database y'ishuri", desc: "Tables, joins na queries z'amanota." },
+      { title: "Raporo z'ubucuruzi", desc: "Aggregations, group by n'imibare." },
+    ],
+  },
+  {
+    key: "bash",
+    label: "Bash / Linux",
+    color: "from-slate-400/30 to-slate-400/5",
+    projects: [
+      { title: "Backup script", desc: "Bika amadosiye byikoresha buri munsi." },
+      { title: "Gucunga sisitemu", desc: "Reba disiki, memory na processes." },
+    ],
+  },
 ];
 
 function Home() {
+  const [active, setActive] = useState<string>(LANGS[0].key);
+  const lang = LANGS.find((l) => l.key === active) ?? LANGS[0];
+
   return (
     <Layout>
-      {/* Hero */}
       <section className="relative overflow-hidden bg-hero">
         <div className="absolute inset-0 grid-bg opacity-30" />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background pointer-events-none" />
-        <div className="relative container mx-auto max-w-7xl px-6 pt-24 pb-32">
-          <div className="max-w-3xl">
-            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface border border-border text-xs font-mono text-muted-foreground">
-              <span className="size-1.5 rounded-full bg-success animate-pulse" /> v2.4 · new AI engineering track
-            </span>
-            <h1 className="mt-6 text-5xl md:text-7xl font-bold tracking-tight">
-              Learn to code by <span className="text-gradient">breaking things</span>, not watching videos.
-            </h1>
-            <p className="mt-6 text-lg text-muted-foreground max-w-2xl">
-              NYCODEHUB is a hands-on platform for coding and software engineering.
-              Real terminals. Real codebases. Real bugs to hunt — all in your browser.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link to="/practice" className="inline-flex items-center gap-2 px-5 py-3 rounded-md bg-gradient-primary text-primary-foreground font-medium shadow-glow hover:brightness-110 transition">
-                <Play className="size-4" /> Launch the lab
-              </Link>
-              <Link to="/courses" className="inline-flex items-center gap-2 px-5 py-3 rounded-md border border-border text-foreground hover:bg-surface transition">
-                Browse courses <ArrowRight className="size-4" />
-              </Link>
-            </div>
-            <div className="mt-10 grid grid-cols-3 gap-6 max-w-md">
-              {[
-                ["120+", "interactive labs"],
-                ["48k", "active learners"],
-                ["4.9★", "avg rating"],
-              ].map(([n, l]) => (
-                <div key={l}>
-                  <div className="font-mono text-2xl text-foreground">{n}</div>
-                  <div className="text-xs text-muted-foreground">{l}</div>
-                </div>
-              ))}
-            </div>
-          </div>
+        <div className="relative container mx-auto max-w-7xl px-6 pt-16 pb-16 text-center">
+          <h1 className="text-4xl md:text-6xl font-bold tracking-tight font-mono">
+            {"WELCOME TO ".split("").map((c, i) => (
+              <span key={i} className="logo-letter inline-block whitespace-pre" style={{ animationDelay: `${i * 45}ms` }}>{c}</span>
+            ))}
+            <span className="text-gradient animate-scale-in inline-block">NYCODEHUB</span>
+            <span className="text-primary-glow caret-blink">_</span>
+          </h1>
 
-          {/* Floating terminal preview */}
-          <div className="mt-20 mx-auto max-w-4xl rounded-xl border border-border bg-surface-elevated shadow-elevated overflow-hidden">
-            <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border bg-surface">
-              <span className="size-3 rounded-full bg-destructive/70" />
-              <span className="size-3 rounded-full bg-chart-4/70" />
-              <span className="size-3 rounded-full bg-success/70" />
-              <span className="ml-3 text-xs font-mono text-muted-foreground">~/lab/intro-to-react</span>
-            </div>
-            <pre className="p-6 text-sm font-mono leading-relaxed overflow-x-auto">
-<span className="text-muted-foreground">$</span> <span className="text-foreground">npm run dev</span>
-{"\n"}<span className="text-success">✓</span> ready in <span className="text-primary-glow">312ms</span>
-{"\n"}<span className="text-muted-foreground">→ local:</span>   http://localhost:5173
-{"\n"}<span className="text-muted-foreground">→ press</span> <span className="text-foreground">h</span> <span className="text-muted-foreground">to show help</span>
-{"\n\n"}<span className="text-muted-foreground">$</span> <span className="text-foreground caret">cat src/App.tsx</span>
-            </pre>
-          </div>
+          <p className="mt-5 text-muted-foreground max-w-2xl mx-auto animate-slide-up">
+            Hitamo ururimi rwa porogaramu maze urebe imishinga ushobora gukora ubu, mu CODEROOM.
+          </p>
         </div>
       </section>
 
-      {/* Tracks grid */}
-      <section className="container mx-auto max-w-7xl px-6 py-24">
-        <div className="flex items-end justify-between mb-10 flex-wrap gap-4">
-          <div>
-            <h2 className="text-3xl md:text-4xl font-bold">Pick your track</h2>
-            <p className="mt-2 text-muted-foreground">Curated paths from beginner to senior engineer.</p>
-          </div>
-          <Link to="/courses" className="text-sm text-primary-glow hover:underline inline-flex items-center gap-1">
-            All courses <ArrowRight className="size-4" />
-          </Link>
+      <section className="container mx-auto max-w-7xl px-6 pb-24 pt-2">
+        <div className="flex flex-wrap gap-2 justify-center">
+          {LANGS.map((l) => (
+            <button
+              key={l.key}
+              onClick={() => setActive(l.key)}
+              className={`px-4 py-2 rounded-full text-sm font-mono border transition hover-scale ${
+                active === l.key
+                  ? "bg-gradient-primary text-primary-foreground border-transparent shadow-glow"
+                  : "border-border text-muted-foreground hover:text-foreground hover:border-primary/50"
+              }`}
+            >
+              {l.label}
+            </button>
+          ))}
         </div>
-        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-          {tracks.map(({ icon: Icon, title, desc, count }) => (
-            <div key={title} className="group bg-gradient-card border border-border rounded-xl p-6 hover:border-primary/50 transition">
-              <div className="flex items-center justify-between">
-                <span className="grid place-items-center size-11 rounded-lg bg-surface border border-border group-hover:bg-gradient-primary group-hover:border-transparent transition">
-                  <Icon className="size-5" />
+
+        <div key={lang.key} className="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-3 animate-scale-in">
+          {lang.projects.map((p, i) => (
+            <div
+              key={p.title}
+              className={`group relative overflow-hidden rounded-xl border border-border bg-gradient-card p-6 transition hover:border-primary/60 hover-scale animate-slide-up`}
+              style={{ animationDelay: `${i * 60}ms` }}
+            >
+              <div className={`absolute inset-0 bg-gradient-to-br ${lang.color} opacity-0 group-hover:opacity-100 transition`} />
+              <div className="relative">
+                <span className="grid place-items-center size-10 rounded-lg bg-surface border border-border group-hover:bg-gradient-primary group-hover:border-transparent transition">
+                  <Code2 className="size-5" />
                 </span>
-                <span className="text-xs font-mono text-muted-foreground">{count}</span>
+                <h2 className="mt-4 text-lg font-semibold">{p.title}</h2>
+                <p className="mt-1.5 text-sm text-muted-foreground">{p.desc}</p>
+                <Link
+                  to="/practice"
+                  className="mt-4 inline-flex items-center gap-1.5 text-sm text-primary-glow hover:underline"
+                >
+                  <Play className="size-3.5" /> Tangira muri CODEROOM
+                </Link>
               </div>
-              <h3 className="mt-5 text-lg font-semibold">{title}</h3>
-              <p className="mt-1.5 text-sm text-muted-foreground">{desc}</p>
             </div>
           ))}
         </div>
-      </section>
 
-      {/* CTA strip */}
-      <section className="container mx-auto max-w-7xl px-6 pb-24">
-        <div className="relative overflow-hidden rounded-2xl border border-border bg-gradient-card p-10 md:p-14">
-          <div className="absolute inset-0 grid-bg opacity-20" />
-          <div className="relative grid md:grid-cols-[1fr_auto] gap-8 items-center">
-            <div>
-              <h3 className="text-2xl md:text-3xl font-bold">Stop reading docs. Start shipping.</h3>
-              <p className="mt-3 text-muted-foreground max-w-xl">
-                Every NYCODEHUB course pairs short videos with a live environment. Code, run, break, fix — repeat.
-              </p>
-            </div>
-            <Link to="/practice" className="justify-self-start md:justify-self-end inline-flex items-center gap-2 px-5 py-3 rounded-md bg-gradient-primary text-primary-foreground font-medium shadow-glow">
-              <Play className="size-4" /> Try a free lab
-            </Link>
-          </div>
+        <div className="mt-12 flex justify-center">
+          <Link
+            to="/practice"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-md bg-gradient-primary text-primary-foreground font-medium shadow-glow hover:brightness-110 transition"
+          >
+            Fungura CODEROOM <ArrowRight className="size-4" />
+          </Link>
         </div>
       </section>
     </Layout>

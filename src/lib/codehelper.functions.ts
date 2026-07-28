@@ -42,3 +42,49 @@ export const askCodeHelper = createServerFn({ method: "POST" })
     const j = await res.json();
     return { answer: j.choices?.[0]?.message?.content ?? "(nta gisubizo)" };
   });
+
+export const analyzeProject = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z.object({
+      language: z.string().min(1).max(40),
+      code: z.string().max(40_000),
+    }).parse(i),
+  )
+  .handler(async ({ data }) => {
+    const key = process.env.LOVABLE_API_KEY;
+    if (!key) throw new Error("AI ntiyabashije gukora. Vugana n'umuyobozi.");
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          {
+            role: "system",
+            content:
+              "Uri NYCODER, terminal isesengura code y'umunyeshuri. Subiza MU KINYARWANDA GUSA, buri murongo utangire n'ikimenyetso kimwe muri ibi:\n" +
+              "ERROR: <ikosa n'umurongo ririmo n'igisubizo>\n" +
+              "WARN: <ikigomba kunozwa>\n" +
+              "LOGIC: <sobanura icyo code ikora mu magambo make>\n" +
+              "FIX: <code igororotse ngufi>\n" +
+              "OK: <igikozwe neza>\n" +
+              "Ntutange indi nyandiko itari kuri iyi miterere. Tanga LOGIC nibura umurongo umwe buri gihe.",
+          },
+          {
+            role: "user",
+            content: `Ururimi: ${data.language}\n\nUmushinga:\n${data.code || "(nta code)"}`,
+          },
+        ],
+        temperature: 0.2,
+      }),
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      if (res.status === 429) throw new Error("Wabaze cyane. Tegereza akanya.");
+      if (res.status === 402) throw new Error("Konti ya AI ntifite amafaranga. Vugana n'umuyobozi.");
+      throw new Error(`AI yagize ikibazo (${res.status}): ${text.slice(0, 160)}`);
+    }
+    const j = await res.json();
+    return { report: (j.choices?.[0]?.message?.content as string) ?? "" };
+  });

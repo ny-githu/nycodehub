@@ -1,5 +1,4 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { Layout } from "@/components/site/Layout";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Terminal, Loader2 } from "lucide-react";
@@ -14,6 +13,10 @@ export const Route = createFileRoute("/login")({
     meta: [
       { title: "Injira — NYCODEHUB" },
       { name: "description", content: "Injira muri konti yawe ya NYCODEHUB." },
+      { property: "og:title", content: "Injira — NYCODEHUB" },
+      { property: "og:description", content: "Injira muri konti yawe ya NYCODEHUB." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: LoginPage,
@@ -46,57 +49,50 @@ function LoginPage() {
   }
 
   return (
-    <Layout>
-      <div className="container mx-auto max-w-md px-4 py-16 animate-fade-in">
-        <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center gap-2 font-mono font-bold text-lg">
-            <span className="grid place-items-center size-10 rounded-md bg-gradient-primary shadow-glow glow-pulse">
-              <Terminal className="size-4 text-primary-foreground" />
-            </span>
-            NYCODEHUB<span className="text-primary-glow caret-blink">_</span>
-          </Link>
-          <h1 className="mt-6 text-2xl font-bold animate-slide-up">{t.signin_title}</h1>
-          <p className="mt-1 text-sm text-muted-foreground font-mono">{t.signin_subtitle}</p>
+    <div className="min-h-screen grid place-items-center bg-background px-4">
+      <div className="w-full max-w-sm animate-fade-in">
+        <div className="flex flex-col items-center">
+          <span className="grid place-items-center size-14 rounded-xl bg-gradient-primary shadow-glow glow-pulse">
+            <Terminal className="size-6 text-primary-foreground" />
+          </span>
+          <div className="mt-4 font-mono text-2xl font-bold tracking-tight flex">
+            {"NYCODEHUB".split("").map((c, i) => (
+              <span key={i} className="logo-letter inline-block" style={{ animationDelay: `${i * 70}ms` }}>
+                {c}
+              </span>
+            ))}
+            <span className="text-primary-glow caret-blink ml-0.5">_</span>
+          </div>
         </div>
 
-        <div className="rounded-xl border border-border bg-gradient-card p-6 shadow-elevated animate-scale-in">
-          <form onSubmit={submit} className="space-y-3">
-            <div>
-              <label className="text-xs font-mono text-muted-foreground">{t.email}</label>
-              <input
-                required
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="we@urugero.com"
-                className="mt-1 w-full px-3 py-2 rounded-md bg-surface border border-border focus:border-primary outline-none text-sm font-mono transition"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-mono text-muted-foreground">{t.password}</label>
-              <input
-                required
-                minLength={6}
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="mt-1 w-full px-3 py-2 rounded-md bg-surface border border-border focus:border-primary outline-none text-sm font-mono transition"
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={busy}
-              className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-md bg-gradient-primary text-primary-foreground font-medium shadow-glow disabled:opacity-60 hover-scale animated-gradient"
-            >
-              {busy && <Loader2 className="size-4 animate-spin" />}
-              {busy ? t.signin_busy : t.signin_btn}
-            </button>
-          </form>
-
-          <p className="mt-5 text-center text-xs text-muted-foreground">{t.signin_no_account}</p>
-        </div>
+        <form onSubmit={submit} className="mt-10 space-y-3 animate-scale-in">
+          <input
+            required
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder={t.email}
+            className="w-full px-3 py-2.5 rounded-md bg-surface border border-border focus:border-primary outline-none text-sm font-mono transition"
+          />
+          <input
+            required
+            minLength={6}
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder={t.password}
+            className="w-full px-3 py-2.5 rounded-md bg-surface border border-border focus:border-primary outline-none text-sm font-mono transition"
+          />
+          <button
+            type="submit"
+            disabled={busy}
+            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-md bg-gradient-primary text-primary-foreground font-medium shadow-glow disabled:opacity-60 hover-scale animated-gradient"
+          >
+            {busy && <Loader2 className="size-4 animate-spin" />}
+            {busy ? t.signin_busy : t.signin_btn}
+          </button>
+        </form>
       </div>
-    </Layout>
+    </div>
   );
 }
