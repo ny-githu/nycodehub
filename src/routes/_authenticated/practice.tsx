@@ -243,7 +243,7 @@ function Practice() {
   const applyMarkers = useCallback((list: Finding[]) => {
     const monaco = monacoRef.current;
     if (!monaco) return;
-    monaco.editor.getModels().forEach((model) => {
+    monaco.editor.getModels().forEach((model: MonacoEditor.ITextModel) => {
       const name = model.uri.path.replace(/^\//, "");
       const own = list.filter((f) => !f.file || f.file === name || f.file.endsWith(name));
       monaco.editor.setModelMarkers(model, "nycoder", own.map((f) => {
