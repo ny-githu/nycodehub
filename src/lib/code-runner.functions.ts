@@ -2,54 +2,73 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-const JUDGE0_LANGUAGES: Record<string, number> = {
-  c: 50, cpp: 54, java: 62, csharp: 51, go: 60, rust: 73,
-  php: 68, ruby: 72, kotlin: 78, swift: 83, bash: 46, sql: 82,
-  typescript: 74,
+const PISTON = "https://emkc.org/api/v2/piston/execute";
+
+const RUNTIME: Record<string, { lang: string; file: string }> = {
+  c: { lang: "c", file: "main.c" },
+  cpp: { lang: "c++", file: "main.cpp" },
+  java: { lang: "java", file: "Main.java" },
+  csharp: { lang: "csharp.net", file: "Program.cs" },
+  go: { lang: "go", file: "main.go" },
+  rust: { lang: "rust", file: "main.rs" },
+  php: { lang: "php", file: "index.php" },
+  ruby: { lang: "ruby", file: "main.rb" },
+  kotlin: { lang: "kotlin", file: "Main.kt" },
+  swift: { lang: "swift", file: "main.swift" },
+  bash: { lang: "bash", file: "main.sh" },
+  sql: { lang: "sqlite3", file: "query.sql" },
+  typescript: { lang: "typescript", file: "index.ts" },
+  python: { lang: "python", file: "main.py" },
+  javascript: { lang: "javascript", file: "main.js" },
+  lua: { lang: "lua", file: "main.lua" },
+  dart: { lang: "dart", file: "main.dart" },
+  r: { lang: "rscript", file: "main.r" },
+  perl: { lang: "perl", file: "main.pl" },
+  scala: { lang: "scala", file: "Main.scala" },
 };
 
 export const runCodeRemote = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i) => z.object({
-    language: z.string().min(1).max(40),
-    source: z.string().min(1).max(50_000),
-    stdin: z.string().max(10_000).optional(),
-  }).parse(i))
+  .inputValidator((i) =>
+    z
+      .object({
+        language: z.string().min(1).max(40),
+        source: z.string().min(1).max(80_000),
+        stdin: z.string().max(10_000).optional(),
+      })
+      .parse(i),
+  )
   .handler(async ({ data }) => {
-    const langId = JUDGE0_LANGUAGES[data.language];
-    if (!langId) {
-      return { ok: false, stdout: "", stderr: `Language "${data.language}" is not supported by the remote runner.`, status: "unsupported" };
-    }
-    const key = process.env.RAPIDAPI_JUDGE0_KEY;
-    if (!key) {
-      return { ok: false, stdout: "", stderr: "Remote runner not configured. Ask the admin to set RAPIDAPI_JUDGE0_KEY.", status: "not_configured" };
+    const runtime = RUNTIME[data.language];
+    if (!runtime) {
+      return { ok: false, stdout: "", stderr: `Ururimi "${data.language}" ntirwemewe kuri seriveri.`, status: "unsupported" };
     }
     try {
-      const res = await fetch("https://judge0-ce.p.rapidapi.com/submissions?base64_encoded=false&wait=true", {
+      const res = await fetch(PISTON, {
         method: "POST",
-        headers: {
-          "content-type": "application/json",
-          "x-rapidapi-key": key,
-          "x-rapidapi-host": "judge0-ce.p.rapidapi.com",
-        },
+        headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          language_id: langId,
-          source_code: data.source,
+          language: runtime.lang,
+          version: "*",
+          files: [{ name: runtime.file, content: data.source }],
           stdin: data.stdin ?? "",
+          compile_timeout: 10_000,
+          run_timeout: 10_000,
         }),
       });
       if (!res.ok) {
-        return { ok: false, stdout: "", stderr: `Runner HTTP ${res.status}`, status: "error" };
+        const text = await res.text();
+        if (res.status === 429) return { ok: false, stdout: "", stderr: "Wabaze cyane. Tegereza akanya usubiremo.", status: "rate_limited" };
+        return { ok: false, stdout: "", stderr: `Seriveri yagize ikibazo (${res.status}): ${text.slice(0, 200)}`, status: "error" };
       }
-      const j = await res.json();
-      return {
-        ok: true,
-        stdout: j.stdout ?? "",
-        stderr: (j.stderr ?? "") + (j.compile_output ? `\n${j.compile_output}` : ""),
-        status: j.status?.description ?? "done",
-        time: j.time, memory: j.memory,
+      const j = (await res.json()) as {
+        compile?: { stdout?: string; stderr?: string };
+        run?: { stdout?: string; stderr?: string; code?: number };
       };
+      const stdout = [j.compile?.stdout, j.run?.stdout].filter(Boolean).join("");
+      const stderr = [j.compile?.stderr, j.run?.stderr].filter(Boolean).join("");
+      return { ok: true, stdout, stderr, status: j.run?.code === 0 ? "success" : `exit ${j.run?.code ?? "?"}` };
     } catch (e) {
-      return { ok: false, stdout: "", stderr: e instanceof Error ? e.message : "Runner request failed", status: "error" };
+      return { ok: false, stdout: "", stderr: e instanceof Error ? e.message : "Byanze guhamagara seriveri", status: "error" };
     }
   });

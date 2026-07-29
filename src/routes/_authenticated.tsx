@@ -16,8 +16,8 @@ export const Route = createFileRoute("/_authenticated")({
     const isAdmin = !!adminRole;
     const expiresAt = profile?.expires_at as string | null;
     const disabled = !!profile?.disabled;
-    const expired = !isAdmin && (disabled || (!!expiresAt && new Date(expiresAt) < new Date()));
-    if (expired && !location.pathname.startsWith("/payment")) {
+    const active = isAdmin || (!disabled && !!expiresAt && new Date(expiresAt) > new Date());
+    if (!active && !location.pathname.startsWith("/payment")) {
       throw redirect({ to: "/payment" });
     }
   },
