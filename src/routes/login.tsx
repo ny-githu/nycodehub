@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { t } from "@/lib/i18n";
 
 export const Route = createFileRoute("/login")({
+  ssr: false,
   validateSearch: (search: Record<string, unknown>) => ({
     redirect: (search.redirect as string) || "/",
   }),
