@@ -167,6 +167,45 @@ export type Database = {
           },
         ]
       }
+      momo_sms: {
+        Row: {
+          amount_rwf: number | null
+          created_at: string
+          id: string
+          linked_request_id: string | null
+          payer_name: string | null
+          raw_text: string
+          received_at: string
+          sender: string | null
+          status: string
+          transaction_id: string | null
+        }
+        Insert: {
+          amount_rwf?: number | null
+          created_at?: string
+          id?: string
+          linked_request_id?: string | null
+          payer_name?: string | null
+          raw_text: string
+          received_at?: string
+          sender?: string | null
+          status?: string
+          transaction_id?: string | null
+        }
+        Update: {
+          amount_rwf?: number | null
+          created_at?: string
+          id?: string
+          linked_request_id?: string | null
+          payer_name?: string | null
+          raw_text?: string
+          received_at?: string
+          sender?: string | null
+          status?: string
+          transaction_id?: string | null
+        }
+        Relationships: []
+      }
       payment_plans: {
         Row: {
           active: boolean

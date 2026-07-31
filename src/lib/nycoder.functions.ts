@@ -52,6 +52,7 @@ const ActionSchema = z.object({
 const AgentSchema = z.object({
   reply: z.string().default(""),
   logic: z.string().default(""),
+  blocked: z.boolean().default(false),
   actions: z.array(ActionSchema).default([]),
   findings: z
     .array(
@@ -66,6 +67,7 @@ const AgentSchema = z.object({
     .default([]),
 });
 
+
 export type NycoderAction = z.infer<typeof ActionSchema>;
 export type NycoderResult = z.infer<typeof AgentSchema>;
 
@@ -75,7 +77,7 @@ const RULES =
   "Uvugana MU KINYARWANDA (amagambo ya tekiniki asigara mu cyongereza). " +
   "Ushobora KWANDIKA no KUVUGURURA dosiye z'umushinga w'umukoresha ukoresheje 'actions'.\n" +
   "SUBIZA JSON GUSA ifite iyi miterere:\n" +
-  '{"reply":"...","logic":"...","actions":[{"op":"write","path":"src/app.js","content":"<code yose y\'iyo dosiye>"}],' +
+  '{"reply":"...","logic":"...","blocked":false,"actions":[{"op":"write","path":"src/app.js","content":"<code yose y\'iyo dosiye>"}],' +
   '"findings":[{"file":"app.js","line":12,"severity":"error","message":"...","fix":"..."}]}\n' +
   "Amabwiriza:\n" +
   "- 'reply': igisubizo cyawe mu Kinyarwanda (mu magambo make, ushobora gukoresha markdown).\n" +
@@ -83,7 +85,9 @@ const RULES =
   "- Iyo umukoresha atanze igitekerezo cy'umushinga, kora umushinga WOSE: dosiye zose zikenewe, folders, README.md, no run.sh + run.bat kugira ngo ukorere kuri Linux na Windows.\n" +
   "- Code yose igomba kuba ikora nta makosa, ifite comments nkeya zisobanura mu Kinyarwanda.\n" +
   "- 'findings': gusa imirongo ifite ikibazo nyakuri; 'line' iba umurongo NYAWO w'iyo dosiye.\n" +
-  "- Iyo nta hindura rikenewe, 'actions' iba urutonde rusa.";
+  "- Iyo nta hindura rikenewe, 'actions' iba urutonde rusa.\n" +
+  "- 'logic': sobanura muri make logic y'ibyo umukoresha asaba (bikoreshwa muri sisitemu gusa, ntibigaragara kuri mukoresha).\n" +
+  "- UMUCO MWIZA: niba ubutumwa busaba ibintu bibi cyangwa binyuranyije n'amategeko (malware, virus, hacking, kwiba amakuru/konti, phishing, ransomware, spam, ibisebya, ibyangiza abandi), shyira 'blocked': true, 'actions' isa, kandi muri 'reply' usobanure mu Kinyarwanda ko udashobora kubifasha n'impamvu. Ubundi 'blocked': false.";
 
 export const nycoderAgent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -110,7 +114,7 @@ export const nycoderAgent = createServerFn({ method: "POST" })
           ? "UMURIMO: sesengura umushinga, sobanura logic yawo, wereke amakosa muri 'findings' ukoresheje file na line nyayo."
           : data.mode === "fix"
             ? "UMURIMO: kosora amakosa yose muri code, wandike dosiye zakosowe muri 'actions', hanyuma usobanure ibyo wahinduye."
-            : "UMURIMO: ganira n'umukoresha, umufashe kumva. Niba asaba impinduka, uzishyire muri 'actions'.";
+            : "UMURIMO: ganira n'umukoresha kandi umufashe gutegura umushinga mbere y'uko ukorwa. Muri 'chat' ntukandike dosiye — 'actions' iba urutonde rusa keretse iyo umukoresha abisabye asobanutse; ahubwo mubaze ibibazo, mugire inama, wereke code ngufi muri 'reply'.";
 
     const raw = await callAI(data.mode === "chat" ? FAST : SMART, {
       temperature: data.mode === "chat" ? 0.4 : 0.15,
@@ -126,9 +130,9 @@ export const nycoderAgent = createServerFn({ method: "POST" })
     });
 
     const parsed = parseJson(raw);
-    if (!parsed) return { reply: raw || "(nta gisubizo)", logic: "", actions: [], findings: [] } as NycoderResult;
+    if (!parsed) return { reply: raw || "(nta gisubizo)", logic: "", blocked: false, actions: [], findings: [] } as NycoderResult;
     const safe = AgentSchema.safeParse(parsed);
-    if (!safe.success) return { reply: raw.slice(0, 2000), logic: "", actions: [], findings: [] } as NycoderResult;
+    if (!safe.success) return { reply: raw.slice(0, 2000), logic: "", blocked: false, actions: [], findings: [] } as NycoderResult;
     return {
       ...safe.data,
       actions: safe.data.actions.filter((a) => a.path.trim().length > 0),
