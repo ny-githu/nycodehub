@@ -11,9 +11,10 @@ import {
   adminListPaymentRequests, adminReviewPayment, adminExtendUser, adminSetUserExpiry,
   getPaymentPage,
 } from "@/lib/payments.functions";
+import { adminListMomoSms, adminUpdateMomoSms, adminAddMomoSms } from "@/lib/momo.functions";
 import { listAdminCourses } from "@/lib/courses.functions";
 import { adminListCourseVideos, adminCreateCourseVideo, adminDeleteCourseVideo } from "@/lib/course-admin.functions";
-import { Loader2, Trash2, ShieldCheck, UserPlus, CreditCard, Settings as SettingsIcon, Users, Receipt, CheckCircle2, XCircle, Clock, Pencil, Plus, Calendar, Search, Lock, Unlock, Video, Upload, Link2, PlayCircle } from "lucide-react";
+import { Loader2, Trash2, ShieldCheck, UserPlus, CreditCard, Settings as SettingsIcon, Users, Receipt, CheckCircle2, XCircle, Clock, Pencil, Plus, Calendar, Search, Lock, Unlock, Video, Upload, Link2, PlayCircle, Smartphone } from "lucide-react";
 import { toast } from "sonner";
 import { t } from "@/lib/i18n";
 
@@ -29,7 +30,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
 });
 
-type Tab = "users" | "plans" | "settings" | "payments" | "courses";
+type Tab = "users" | "plans" | "settings" | "payments" | "courses" | "momo";
 
 function AdminPage() {
   const [tab, setTab] = useState<Tab>("users");
@@ -51,6 +52,7 @@ function AdminPage() {
             ["users", Users, t.admin_tab_users],
             ["courses", Video, t.admin_tab_courses],
             ["payments", Receipt, t.admin_tab_payments],
+            ["momo", Smartphone, "MoMo SMS"],
             ["plans", CreditCard, t.admin_tab_plans],
             ["settings", SettingsIcon, t.admin_tab_settings],
           ] as const).map(([id, Icon, label]) => (
@@ -69,6 +71,7 @@ function AdminPage() {
         {tab === "users" && <UsersTab />}
         {tab === "courses" && <CoursesTab />}
         {tab === "payments" && <PaymentsTab />}
+        {tab === "momo" && <MomoTab />}
         {tab === "plans" && <PlansTab />}
         {tab === "settings" && <SettingsTab />}
       </div>
@@ -625,6 +628,82 @@ function VideosPanel({ courseId, title }: { courseId: string; title: string }) {
               );
             })
           )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MomoTab() {
+  const qc = useQueryClient();
+  const list = useServerFn(adminListMomoSms);
+  const update = useServerFn(adminUpdateMomoSms);
+  const add = useServerFn(adminAddMomoSms);
+  const [text, setText] = useState("");
+  const { data, isLoading } = useQuery({ queryKey: ["momo-sms"], queryFn: () => list({}) });
+  const mUpdate = useMutation({
+    mutationFn: (input: { id: string; status: "pending" | "confirmed" | "dismissed" }) => update({ data: input }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["momo-sms"] }); toast.success("Byavuguruwe"); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const mAdd = useMutation({
+    mutationFn: (value: string) => add({ data: { text: value } }),
+    onSuccess: () => { setText(""); qc.invalidateQueries({ queryKey: ["momo-sms"] }); toast.success("Ubutumwa bwongewemo"); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      <div className="rounded-lg border border-border bg-surface p-4">
+        <h2 className="font-semibold mb-1 flex items-center gap-2"><Smartphone className="size-4 text-primary-glow" /> Ubutumwa bwa MoMo (0791294492)</h2>
+        <p className="text-xs text-muted-foreground mb-3">
+          Shyira SMS forwarder kuri telefoni yawe, itume ubutumwa bwa MTN MoMo kuri:
+          <code className="mx-1 rounded bg-background px-1 py-0.5 font-mono">POST /api/public/momo-sms</code>
+          ifite header <code className="rounded bg-background px-1 py-0.5 font-mono">x-momo-token</code> na body
+          <code className="mx-1 rounded bg-background px-1 py-0.5 font-mono">{"{ \"text\": \"<SMS>\" }"}</code>.
+          Sisitemu ikuramo transaction ID n'amafaranga, hanyuma iyishyira kuri urutonde rutegereje kwemezwa.
+        </p>
+        <div className="flex gap-2">
+          <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Omeka SMS ya MoMo hano (test)" className="flex-1 rounded border border-border bg-background px-3 py-2 text-sm" />
+          <button onClick={() => text.trim() && mAdd.mutate(text.trim())} disabled={mAdd.isPending} className="rounded bg-primary px-3 py-2 text-sm text-primary-foreground disabled:opacity-60">Ongeraho</button>
+        </div>
+      </div>
+
+      {isLoading ? <Loader2 className="size-5 animate-spin" /> : (
+        <div className="overflow-x-auto rounded-lg border border-border">
+          <table className="w-full text-sm">
+            <thead className="bg-surface text-muted-foreground">
+              <tr>
+                <th className="p-3 text-left">Transaction ID</th>
+                <th className="p-3 text-left">Amafaranga</th>
+                <th className="p-3 text-left">Ubutumwa</th>
+                <th className="p-3 text-left">Uwishyuye</th>
+                <th className="p-3 text-left">Status</th>
+                <th className="p-3 text-left" />
+              </tr>
+            </thead>
+            <tbody>
+              {(data ?? []).map((row) => (
+                <tr key={row.id} className="border-t border-border align-top">
+                  <td className="p-3 font-mono text-xs">{row.transaction_id ?? "—"}</td>
+                  <td className="p-3 font-mono text-xs">{row.amount_rwf ? `${row.amount_rwf.toLocaleString()} RWF` : "—"}</td>
+                  <td className="p-3 text-xs max-w-md text-muted-foreground">{row.raw_text.slice(0, 160)}</td>
+                  <td className="p-3 text-xs">{row.payer_name ?? row.sender ?? "—"}</td>
+                  <td className="p-3 text-xs">
+                    <span className={row.status === "confirmed" ? "text-success" : row.status === "dismissed" ? "text-muted-foreground" : "text-chart-4"}>{row.status}</span>
+                    {row.matched_request_id && <div className="text-[10px] text-primary-glow">✓ ihuye n'ubusabe ({row.matched_request_status})</div>}
+                  </td>
+                  <td className="p-3">
+                    <div className="flex gap-1">
+                      <button onClick={() => mUpdate.mutate({ id: row.id, status: "confirmed" })} className="rounded bg-success/20 px-2 py-1 text-[11px] text-success">Emeza</button>
+                      <button onClick={() => mUpdate.mutate({ id: row.id, status: "dismissed" })} className="rounded border border-border px-2 py-1 text-[11px] text-muted-foreground">Kuraho</button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {(data ?? []).length === 0 && <tr><td colSpan={6} className="p-6 text-center text-muted-foreground text-sm">Nta butumwa buraboneka.</td></tr>}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
