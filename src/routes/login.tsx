@@ -30,9 +30,8 @@ function LoginPage() {
   const navigate = useNavigate();
   const search = Route.useSearch();
 
-  useEffect(() => {
-    fetch("/api/public/bootstrap-admin").catch(() => {});
-  }, []);
+
+
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
