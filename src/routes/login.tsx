@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Terminal, Loader2 } from "lucide-react";
@@ -91,7 +91,17 @@ function LoginPage() {
             {busy && <Loader2 className="size-4 animate-spin" />}
             {busy ? t.signin_busy : t.signin_btn}
           </button>
+
+          <div className="pt-2 text-center">
+            <Link
+              to="/signup"
+              className="text-xs text-muted-foreground hover:text-primary-glow transition story-link"
+            >
+              Ntufite konti? Fungura konti nshya
+            </Link>
+          </div>
         </form>
+
       </div>
     </div>
   );

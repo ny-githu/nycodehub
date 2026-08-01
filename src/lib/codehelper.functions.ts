@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { assertActiveAccount } from "./access.server";
 
 const GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const MODEL = "google/gemini-2.5-flash";
@@ -31,7 +32,8 @@ export const askCodeHelper = createServerFn({ method: "POST" })
       question: z.string().min(1).max(1000),
     }).parse(i),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await assertActiveAccount(context.userId);
     const j = await callAI({
       temperature: 0.3,
       messages: [
@@ -75,7 +77,8 @@ export const analyzeProject = createServerFn({ method: "POST" })
       code: z.string().max(60_000),
     }).parse(i),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await assertActiveAccount(context.userId);
     const j = await callAI({
       temperature: 0.1,
       response_format: { type: "json_object" },
