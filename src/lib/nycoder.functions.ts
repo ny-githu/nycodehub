@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { assertActiveAccount } from "./access.server";
 
 const GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const SMART = "google/gemini-3.1-pro-preview";
@@ -102,7 +103,8 @@ export const nycoderAgent = createServerFn({ method: "POST" })
       })
       .parse(i),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await assertActiveAccount(context.userId);
     const workspace = data.files.length
       ? data.files.map((f) => `### DOSIYE: ${f.name}\n${f.content}`).join("\n\n")
       : "(umushinga ntacyo urimo)";
