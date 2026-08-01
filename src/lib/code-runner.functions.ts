@@ -68,7 +68,9 @@ export const runCodeRemote = createServerFn({ method: "POST" })
       })
       .parse(i),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await assertActiveAccount(context.userId);
+
     const runtime = RUNTIME[data.language];
     if (!runtime) {
       return { ok: false, stdout: "", stderr: `Ururimi "${data.language}" ntirwemewe kuri seriveri.`, status: "unsupported" };
