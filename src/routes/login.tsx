@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Terminal, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -30,9 +30,8 @@ function LoginPage() {
   const navigate = useNavigate();
   const search = Route.useSearch();
 
-  useEffect(() => {
-    fetch("/api/public/bootstrap-admin").catch(() => {});
-  }, []);
+
+
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
