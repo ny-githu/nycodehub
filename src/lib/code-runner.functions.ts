@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { assertActiveAccount } from "./access.server";
+
 
 const ENDPOINTS = [
   "https://emkc.org/api/v2/piston/execute",
