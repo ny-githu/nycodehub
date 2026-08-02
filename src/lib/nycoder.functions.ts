@@ -102,7 +102,7 @@ export const nycoderAgent = createServerFn({ method: "POST" })
             ? "UMURIMO: kosora amakosa yose muri code, wandike dosiye zakosowe muri 'actions', hanyuma usobanure ibyo wahinduye."
             : "UMURIMO: ganira n'umukoresha kandi umufashe gutegura umushinga mbere y'uko ukorwa. Muri 'chat' ntukandike dosiye — 'actions' iba urutonde rusa keretse iyo umukoresha abisabye asobanutse; ahubwo mubaze ibibazo, mugire inama, wereke code ngufi muri 'reply'.";
 
-    const raw = await callAI(data.mode === "chat" ? FAST : SMART, {
+    const raw = await callAI(data.mode === "chat" ? FAST_CHAIN : SMART_CHAIN, {
       temperature: data.mode === "chat" ? 0.4 : 0.15,
       response_format: { type: "json_object" },
       messages: [
