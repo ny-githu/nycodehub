@@ -33,7 +33,16 @@ export const Route = createFileRoute("/_authenticated/admin")({
 type Tab = "users" | "plans" | "settings" | "payments" | "courses" | "momo";
 
 function AdminPage() {
-  const [tab, setTab] = useState<Tab>("users");
+  const [tab, setTab] = useState<Tab>("payments");
+  const listFn = useServerFn(adminListPaymentRequests);
+  const { data: allRequests } = useQuery({
+    queryKey: ["admin-payments"],
+    queryFn: () => listFn(),
+    refetchInterval: 15_000,
+    refetchOnWindowFocus: true,
+  });
+  const pendingCount = (allRequests ?? []).filter((r) => r.status === "pending").length;
+
   return (
     <Layout>
       <div className="container mx-auto max-w-6xl px-6 py-10 animate-fade-in">
@@ -46,6 +55,19 @@ function AdminPage() {
             <p className="text-sm text-muted-foreground font-mono">{t.admin_sub}</p>
           </div>
         </div>
+
+        {pendingCount > 0 && (
+          <button
+            onClick={() => setTab("payments")}
+            className="mb-6 w-full flex items-center gap-2 rounded-lg border border-primary/40 bg-primary/10 px-4 py-3 text-left text-sm hover-scale"
+          >
+            <Clock className="size-4 text-primary" />
+            <span>
+              <span className="font-semibold">{pendingCount}</span> transaction ID{" "}
+              {pendingCount === 1 ? "itegereje" : "zitegereje"} kwemezwa — kanda hano ubireba.
+            </span>
+          </button>
+        )}
 
         <div className="flex flex-wrap gap-1 mb-6 border-b border-border">
           {([
@@ -64,9 +86,15 @@ function AdminPage() {
               }`}
             >
               <Icon className="size-4" /> {label}
+              {id === "payments" && pendingCount > 0 && (
+                <span className="ml-1 grid place-items-center min-w-5 h-5 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold">
+                  {pendingCount}
+                </span>
+              )}
             </button>
           ))}
         </div>
+
 
         {tab === "users" && <UsersTab />}
         {tab === "courses" && <CoursesTab />}
