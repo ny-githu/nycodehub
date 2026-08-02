@@ -3,26 +3,10 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertActiveAccount } from "./access.server";
 
-const GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
-const SMART = "google/gemini-3.1-pro-preview";
-const FAST = "google/gemini-3.6-flash";
+import { callAIWithFallback, SMART_CHAIN, FAST_CHAIN } from "./ai-call.server";
 
-async function callAI(model: string, body: Record<string, unknown>) {
-  const key = process.env.LOVABLE_API_KEY;
-  if (!key) throw new Error("NYCODER ntiyabashije gukora. Vugana n'umuyobozi.");
-  const res = await fetch(GATEWAY, {
-    method: "POST",
-    headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
-    body: JSON.stringify({ model, ...body }),
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    if (res.status === 429) throw new Error("Ibibazo byinshi ku isaha imwe. Tegereza akanya usubiremo.");
-    if (res.status === 402) throw new Error("Konti ya AI ntifite amafaranga. Vugana n'umuyobozi.");
-    throw new Error(`NYCODER yagize ikibazo (${res.status}): ${text.slice(0, 160)}`);
-  }
-  const j = (await res.json()) as { choices?: { message?: { content?: string } }[] };
-  return j.choices?.[0]?.message?.content ?? "";
+async function callAI(chain: string[], body: Record<string, unknown>) {
+  return callAIWithFallback(chain, body);
 }
 
 function parseJson(raw: string): unknown {
@@ -118,7 +102,7 @@ export const nycoderAgent = createServerFn({ method: "POST" })
             ? "UMURIMO: kosora amakosa yose muri code, wandike dosiye zakosowe muri 'actions', hanyuma usobanure ibyo wahinduye."
             : "UMURIMO: ganira n'umukoresha kandi umufashe gutegura umushinga mbere y'uko ukorwa. Muri 'chat' ntukandike dosiye — 'actions' iba urutonde rusa keretse iyo umukoresha abisabye asobanutse; ahubwo mubaze ibibazo, mugire inama, wereke code ngufi muri 'reply'.";
 
-    const raw = await callAI(data.mode === "chat" ? FAST : SMART, {
+    const raw = await callAI(data.mode === "chat" ? FAST_CHAIN : SMART_CHAIN, {
       temperature: data.mode === "chat" ? 0.4 : 0.15,
       response_format: { type: "json_object" },
       messages: [
