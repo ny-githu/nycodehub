@@ -3,24 +3,11 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertActiveAccount } from "./access.server";
 
-const GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
-const MODEL = "google/gemini-2.5-flash";
+import { callAIWithFallback, FAST_CHAIN } from "./ai-call.server";
 
 async function callAI(body: Record<string, unknown>) {
-  const key = process.env.LOVABLE_API_KEY;
-  if (!key) throw new Error("AI ntiyabashije gukora. Vugana n'umuyobozi.");
-  const res = await fetch(GATEWAY, {
-    method: "POST",
-    headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
-    body: JSON.stringify({ model: MODEL, ...body }),
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    if (res.status === 429) throw new Error("Wabaze cyane. Tegereza akanya.");
-    if (res.status === 402) throw new Error("Konti ya AI ntifite amafaranga. Vugana n'umuyobozi.");
-    throw new Error(`AI yagize ikibazo (${res.status}): ${text.slice(0, 160)}`);
-  }
-  return (await res.json()) as { choices?: { message?: { content?: string } }[] };
+  const content = await callAIWithFallback(FAST_CHAIN, body);
+  return { choices: [{ message: { content } }] };
 }
 
 export const askCodeHelper = createServerFn({ method: "POST" })
