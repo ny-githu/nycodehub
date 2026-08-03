@@ -28,6 +28,8 @@ function Home() {
   const [active, setActive] = useState<LangKey>("html");
   const lang = LANGS.find((l) => l.key === active) ?? LANGS[0];
   const templates = templatesFor(active);
+  const broadcastFn = useServerFn(listBroadcasts);
+  const { data: broadcasts } = useQuery({ queryKey: ["broadcasts"], queryFn: () => broadcastFn() });
 
   function openTemplate(id: string) {
     const template = TEMPLATES.find((t) => t.id === id);
