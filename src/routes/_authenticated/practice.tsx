@@ -10,8 +10,7 @@ import { nycoderAgent, type NycoderAction } from "@/lib/nycoder.functions";
 import type { Finding } from "@/lib/codehelper.functions";
 import { LANGS, getLang, TEMPLATE_HANDOFF_KEY, type LangKey, type ProjectFile } from "@/lib/templates";
 import {
-  Bot, ChevronDown, ChevronUp, Download, Eye, FileCode2, FlaskConical, FolderPlus, FolderUp, Hammer,
-  History, Loader2, PanelLeftClose, PanelLeftOpen, Play, Rocket, Sparkles, Terminal as TerminalIcon,
+  Bot, ChevronDown, ChevronUp, Download, Eye, FileCode2, FlaskConical, FolderPlus, FolderUp, Hammer, Loader2, PanelLeftClose, PanelLeftOpen, Play, Rocket, Sparkles, Terminal as TerminalIcon,
   Trash2, Upload, Wrench,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -48,7 +47,6 @@ async function loadPyodide() {
 }
 
 const storageKey = (language: LangKey) => `nycodehub:project:${language}`;
-const versionsKey = (language: LangKey) => `nycodehub:versions:${language}`;
 const TEXT_EXT = /\.(html?|css|js|mjs|cjs|jsx|ts|tsx|json|md|txt|py|java|c|h|cpp|cc|hpp|cs|go|rs|php|rb|kt|swift|sh|sql|lua|dart|r|pl|scala|yml|yaml|env|toml|xml|svg|gitignore)$/i;
 const WEB_EXT = /\.(html?|css|js|mjs|jsx)$/i;
 
@@ -57,7 +55,6 @@ const RUN_BAT = `@echo off\nif exist package.json ( npm install && npm start & g
 
 type Msg = { role: "user" | "assistant" | "system"; content: string; kind?: "error" | "ok" | "term" };
 type AgentMode = "chat" | "build" | "debug" | "fix";
-type Version = { id: string; label: string; at: string; files: ProjectFile[] };
 type Panel = "preview" | "output";
 type BottomTab = "nycoder" | "terminal";
 
@@ -77,8 +74,6 @@ function Practice() {
   const [bottomTab, setBottomTab] = useState<BottomTab>("nycoder");
   const [panelOverride, setPanelOverride] = useState<Panel | null>(null);
   const [dragOver, setDragOver] = useState(false);
-  const [versions, setVersions] = useState<Version[]>([]);
-  const [versionsOpen, setVersionsOpen] = useState(false);
   const [pending, setPending] = useState<NycoderAction[]>([]);
   const [messages, setMessages] = useState<Msg[]>([
     { role: "assistant", content: "Muraho! Ndi NYCODER. Muri 'Ganira' turaganira ku gitekerezo cyawe mbere yo kwandika dosiye — iyo witeguye, hitamo 'Ubaka'." },
@@ -149,10 +144,6 @@ function Practice() {
       const next = parsed?.length ? parsed : [{ name: lang.file, content: lang.sample }];
       setFiles(next); setActiveName(next[0].name);
     } catch { setFiles([{ name: lang.file, content: lang.sample }]); setActiveName(lang.file); }
-    try {
-      const rawVersions = localStorage.getItem(versionsKey(langKey));
-      setVersions(rawVersions ? JSON.parse(rawVersions) as Version[] : []);
-    } catch { setVersions([]); }
     setOutput(""); setPreviewHtml(""); setFindings([]); setPending([]);
   }, [langKey, lang, mounted]);
 
@@ -235,34 +226,6 @@ function Practice() {
     zipDownload(entries, `nycodehub-${langKey}-deploy.zip`);
     toast.success("Deployment package yakuwemo");
   }
-
-  const saveVersion = useCallback((label?: string) => {
-    const version: Version = {
-      id: `${Date.now()}`,
-      label: label?.trim() || `Verisiyo ${new Date().toLocaleTimeString("rw-RW")}`,
-      at: new Date().toISOString(),
-      files: filesRef.current.map((f) => ({ ...f })),
-    };
-    setVersions((current) => {
-      const next = [version, ...current].slice(0, 20);
-      localStorage.setItem(versionsKey(langRef.current), JSON.stringify(next));
-      return next;
-    });
-    toast.success(`Yabitswe: ${version.label}`);
-    return version;
-  }, []);
-
-  const restoreVersion = useCallback((id: string) => {
-    setVersions((current) => {
-      const found = current.find((v) => v.id === id);
-      if (found?.files.length) {
-        setFiles(found.files.map((f) => ({ ...f })));
-        setActiveName(found.files[0].name);
-        toast.success(`Wagaruye: ${found.label}`);
-      }
-      return current;
-    });
-  }, []);
 
   function buildWebPreview() {
     const html = filesRef.current.find((file) => file.name.endsWith(".html"));
@@ -449,7 +412,6 @@ function Practice() {
         setPending(result.actions);
       } else {
         changed = applyActions(result.actions);
-        if (changed) saveVersion(`Mbere ya NYCODER (${new Date().toLocaleTimeString("rw-RW")})`);
       }
 
       setFindings(result.findings);
@@ -470,7 +432,7 @@ function Practice() {
       setMessages((current) => [...current, { role: "assistant", content: error instanceof Error ? error.message : "Byanze", kind: "error" }]);
       setScan("idle");
     } finally { setBusy(false); }
-  }, [agent, applyActions, applyMarkers, busy, flyToFinding, messages, activeName, saveVersion]);
+  }, [agent, applyActions, applyMarkers, busy, flyToFinding, messages, activeName]);
 
   useEffect(() => {
     if (!autoCheck || !mounted) return;
@@ -517,9 +479,6 @@ function Practice() {
           "  rm <dosiye>         — siba dosiye",
           "  run                 — koresha umushinga",
           "  test                — koresha test zose",
-          "  save [izina]        — bika verisiyo",
-          "  versions            — erekana verisiyo zabitswe",
-          "  restore <n>         — garura verisiyo ya n",
           "  download            — kuramo umushinga (zip)",
           "  deploy              — kuramo deployment package",
           "  ny <ubutumwa>       — baza NYCODER",
@@ -557,20 +516,6 @@ function Practice() {
       }
       case "run": void run(); pushTerm("▶ gukora..."); break;
       case "test": void runTests(); pushTerm("▶ test..."); break;
-      case "save": { const v = saveVersion(rest); pushTerm(`✓ ${v.label}`, "ok"); break; }
-      case "versions":
-        pushTerm(versions.length
-          ? versions.map((v, index) => `${index + 1}. ${v.label} — ${new Date(v.at).toLocaleString("rw-RW")}`).join("\n")
-          : "(nta verisiyo zabitswe)");
-        break;
-      case "restore": {
-        const index = Number(rest) - 1;
-        const version = versions[index];
-        if (!version) { pushTerm("restore: verisiyo ntibonetse", "error"); break; }
-        restoreVersion(version.id);
-        pushTerm(`✓ wagaruye ${version.label}`, "ok");
-        break;
-      }
       case "download": downloadProject(); pushTerm("✓ zip yakuwemo", "ok"); break;
       case "deploy": exportDeployment(); pushTerm("✓ deployment package yakuwemo", "ok"); break;
       case "ny":
@@ -581,7 +526,7 @@ function Practice() {
       case "clear": setTermLines([]); break;
       default: pushTerm(`${command}: iri bwiriza ntiryumvikana. Andika 'help'.`, "error");
     }
-  }, [pushTerm, run, runTests, saveVersion, versions, restoreVersion, send, mode]);
+  }, [pushTerm, run, runTests, send, mode]);
 
   const errorCount = findings.filter((f) => f.severity === "error").length;
   const warnCount = findings.filter((f) => f.severity === "warning").length;
@@ -589,7 +534,6 @@ function Practice() {
   const MODES: { key: AgentMode; label: string; icon: typeof Bot }[] = [
     { key: "chat", label: "Ganira", icon: Bot },
     { key: "build", label: "Ubaka", icon: Hammer },
-    { key: "debug", label: "Debug", icon: Sparkles },
     { key: "fix", label: "Kosora", icon: Wrench },
   ];
 
@@ -628,12 +572,6 @@ function Practice() {
                 onChange={(e) => { void importFiles(e.target.files, true); e.target.value = ""; }}
               />
             </label>
-            <button onClick={() => saveVersion()} title="Bika verisiyo" className="inline-flex items-center gap-1.5 rounded border border-border px-2 py-1.5 text-xs text-muted-foreground hover:text-foreground">
-              <History className="size-3.5" />Bika verisiyo
-            </button>
-            <button onClick={() => setVersionsOpen((open) => !open)} className="rounded border border-border px-2 py-1.5 text-xs text-muted-foreground hover:text-foreground">
-              Verisiyo ({versions.length})
-            </button>
             <button onClick={() => void runTests()} disabled={running} className="inline-flex items-center gap-1.5 rounded border border-border px-2 py-1.5 text-xs text-muted-foreground hover:text-foreground disabled:opacity-60">
               <FlaskConical className="size-3.5" />Test
             </button>
@@ -644,18 +582,6 @@ function Practice() {
             <button onClick={downloadProject} className="inline-flex items-center gap-1.5 rounded bg-gradient-primary px-3 py-1.5 text-xs font-medium text-primary-foreground shadow-glow"><Download className="size-4" />{t.practice_download}</button>
           </div>
         </header>
-
-        {versionsOpen && (
-          <div className="max-h-40 shrink-0 overflow-y-auto border-b border-border bg-surface/60 px-3 py-2 text-xs animate-fade-in">
-            {versions.length === 0 && <p className="text-muted-foreground">Nta verisiyo zirabikwa. Kanda "Bika verisiyo".</p>}
-            {versions.map((version) => (
-              <div key={version.id} className="flex items-center justify-between gap-2 border-b border-border/50 py-1.5 last:border-0">
-                <span className="truncate font-mono">{version.label} <span className="text-muted-foreground">· {new Date(version.at).toLocaleString("rw-RW")} · dosiye {version.files.length}</span></span>
-                <button onClick={() => restoreVersion(version.id)} className="rounded bg-primary/20 px-2 py-1 text-[11px] text-primary-glow hover:bg-primary/30">Garura</button>
-              </div>
-            ))}
-          </div>
-        )}
 
         <div className="flex min-h-0 flex-1">
           {filesOpen && (
@@ -787,7 +713,7 @@ function Practice() {
                   <div className="flex items-center gap-2 rounded border border-primary/40 bg-primary/10 px-2 py-1.5 text-[11px] text-primary-glow">
                     <span>NYCODER yateguye dosiye {pending.length}. Wemeza ko zishyirwa muri workspace?</span>
                     <button
-                      onClick={() => { saveVersion("Mbere yo kwemeza NYCODER"); const n = applyActions(pending); setPending([]); toast.success(`Dosiye ${n} zashyizwemo`); }}
+                      onClick={() => { const n = applyActions(pending); setPending([]); toast.success(`Dosiye ${n} zashyizwemo`); }}
                       className="rounded bg-primary px-2 py-0.5 text-primary-foreground"
                     >Emeza</button>
                     <button onClick={() => setPending([])} className="rounded border border-border px-2 py-0.5 text-muted-foreground">Reka</button>

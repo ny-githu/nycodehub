@@ -7,7 +7,11 @@ import { assertActiveAccount } from "./access.server";
 const ENDPOINTS = [
   "https://emkc.org/api/v2/piston/execute",
   "https://piston.rickyshi.workers.dev/api/v2/execute",
+  "https://piston.thomasarmstrong.dev/api/v2/execute",
+  "https://api.piston.rs/api/v2/execute",
 ];
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 const RUNTIME: Record<string, { lang: string; file: string }> = {
   c: { lang: "c", file: "main.c" },
@@ -100,34 +104,40 @@ export const runCodeRemote = createServerFn({ method: "POST" })
 
     let lastError = "";
     for (const endpoint of ENDPOINTS) {
-      try {
-        const res = await fetch(endpoint, {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        if (!res.ok) {
-          const text = await res.text();
-          lastError = res.status === 429
-            ? "Wabaze cyane. Tegereza amasegonda make usubiremo."
-            : `Seriveri (${res.status}): ${text.slice(0, 160)}`;
-          continue;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          const res = await fetch(endpoint, {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          if (!res.ok) {
+            const text = await res.text();
+            lastError = `(${res.status}) ${text.slice(0, 120)}`;
+            // Rate limit or gateway hiccup: wait, then try the same mirror again.
+            if (res.status === 429 || res.status >= 500) {
+              await sleep(700 * (attempt + 1));
+              continue;
+            }
+            break;
+          }
+          const j = (await res.json()) as {
+            compile?: { stdout?: string; stderr?: string };
+            run?: { stdout?: string; stderr?: string; code?: number };
+          };
+          const stdout = [j.compile?.stdout, j.run?.stdout].filter(Boolean).join("");
+          const stderr = [j.compile?.stderr, j.run?.stderr].filter(Boolean).join("");
+          return { ok: true, stdout, stderr, status: j.run?.code === 0 ? "success" : `exit ${j.run?.code ?? "?"}` };
+        } catch (e) {
+          lastError = e instanceof Error ? e.message : "network";
+          await sleep(400);
         }
-        const j = (await res.json()) as {
-          compile?: { stdout?: string; stderr?: string };
-          run?: { stdout?: string; stderr?: string; code?: number };
-        };
-        const stdout = [j.compile?.stdout, j.run?.stdout].filter(Boolean).join("");
-        const stderr = [j.compile?.stderr, j.run?.stderr].filter(Boolean).join("");
-        return { ok: true, stdout, stderr, status: j.run?.code === 0 ? "success" : `exit ${j.run?.code ?? "?"}` };
-      } catch (e) {
-        lastError = e instanceof Error ? e.message : "Byanze guhamagara seriveri";
       }
     }
     return {
       ok: false,
       stdout: "",
-      stderr: `Seriveri y'ikoresha code ntiyabonetse ubu. ${lastError}\nGerageza nanone mu masegonda make.`,
+      stderr: `Seriveri zose zo gukoresha code zihuze ubu ${lastError ? `— ${lastError}` : ""}.\nGerageza nanone mu masegonda make (JavaScript, HTML na Python zikora bidasabye seriveri).`,
       status: "error",
     };
   });

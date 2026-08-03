@@ -1,8 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { Layout } from "@/components/site/Layout";
 import { LANGS, TEMPLATES, TEMPLATE_HANDOFF_KEY, templatesFor, type LangKey } from "@/lib/templates";
-import { ArrowRight, Code2, Play, Sparkles, Terminal } from "lucide-react";
+import { listBroadcasts } from "@/lib/nycoder-admin.functions";
+import { ArrowRight, Code2, Megaphone, Play, Sparkles, Terminal } from "lucide-react";
 import heroStudents from "@/assets/hero-students.jpg";
 import codingHands from "@/assets/coding-hands.jpg";
 
@@ -25,6 +28,8 @@ function Home() {
   const [active, setActive] = useState<LangKey>("html");
   const lang = LANGS.find((l) => l.key === active) ?? LANGS[0];
   const templates = templatesFor(active);
+  const broadcastFn = useServerFn(listBroadcasts);
+  const { data: broadcasts } = useQuery({ queryKey: ["broadcasts"], queryFn: () => broadcastFn() });
 
   function openTemplate(id: string) {
     const template = TEMPLATES.find((t) => t.id === id);
@@ -40,6 +45,21 @@ function Home() {
 
   return (
     <Layout>
+      {(broadcasts ?? []).length > 0 && (
+        <div className="container mx-auto max-w-7xl px-6 pt-6 space-y-3">
+          {(broadcasts ?? []).map((b) => (
+            <div key={b.id} className="rounded-xl border border-primary/40 bg-primary/10 p-4 animate-slide-up">
+              <div className="flex items-center gap-2 text-sm font-semibold">
+                <Megaphone className="size-4 text-primary-glow" /> {b.title}
+              </div>
+              {b.message && <p className="mt-1.5 text-sm text-muted-foreground whitespace-pre-line">{b.message}</p>}
+              {b.video_url && (
+                <video src={b.video_url} controls className="mt-3 w-full max-w-2xl rounded-lg border border-border" />
+              )}
+            </div>
+          ))}
+        </div>
+      )}
       <section className="relative overflow-hidden bg-hero">
         <img
           src={heroStudents}
@@ -64,9 +84,6 @@ function Home() {
           <div className="mt-7 flex flex-wrap justify-center gap-3">
             <Link to="/practice" className="inline-flex items-center gap-2 rounded-md bg-gradient-primary px-6 py-3 font-medium text-primary-foreground shadow-glow hover:brightness-110 transition">
               Fungura CODEROOM <ArrowRight className="size-4" />
-            </Link>
-            <Link to="/courses" className="inline-flex items-center gap-2 rounded-md border border-border px-6 py-3 font-medium hover:border-primary/60 transition">
-              Reba amasomo
             </Link>
           </div>
         </div>

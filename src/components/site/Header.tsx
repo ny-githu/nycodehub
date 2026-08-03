@@ -4,10 +4,12 @@ import { useAuth } from "@/hooks/use-auth";
 import { Logo } from "./Logo";
 import { t } from "@/lib/i18n";
 
-const links = [
+const baseLinks = [
   { to: "/practice", label: t.nav_practice },
-  { to: "/payment", label: t.nav_payment, icon: true },
 ] as const;
+
+const paymentLink = { to: "/payment", label: t.nav_payment, icon: true } as const;
+
 
 export function Header() {
   const { user, signOut, loading, isAdmin } = useAuth();
@@ -18,7 +20,7 @@ export function Header() {
       <div className="container mx-auto max-w-7xl px-6 h-16 flex items-center justify-between">
         <Logo />
         <nav className="hidden md:flex items-center gap-1">
-          {links.map((l) => (
+          {[...baseLinks, ...(isAdmin ? [] : [paymentLink])].map((l) => (
             <Link
               key={l.to}
               to={l.to}
@@ -46,7 +48,7 @@ export function Header() {
                 {user.email}
               </span>
               <button
-                onClick={async () => { await signOut(); navigate({ to: "/login" }); }}
+                onClick={async () => { await signOut(); navigate({ to: "/login", search: { redirect: "/" } }); }}
                 className="inline-flex items-center gap-1.5 px-3 py-2 text-sm text-muted-foreground hover:text-foreground rounded-md"
               >
                 <LogOut className="size-4" /> <span className="hidden sm:inline">{t.nav_signout}</span>
@@ -60,7 +62,7 @@ export function Header() {
             </>
           ) : (
             <Link
-              to="/login"
+              to="/login" search={{ redirect: "/" }}
               className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-md bg-gradient-primary text-primary-foreground shadow-glow hover:brightness-110 hover-scale transition"
             >
               {t.nav_signin}
