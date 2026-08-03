@@ -20,7 +20,7 @@ export function Header() {
       <div className="container mx-auto max-w-7xl px-6 h-16 flex items-center justify-between">
         <Logo />
         <nav className="hidden md:flex items-center gap-1">
-          {links.map((l) => (
+          {[...baseLinks, ...(isAdmin ? [] : [paymentLink])].map((l) => (
             <Link
               key={l.to}
               to={l.to}
