@@ -65,9 +65,6 @@ function Home() {
             <Link to="/practice" className="inline-flex items-center gap-2 rounded-md bg-gradient-primary px-6 py-3 font-medium text-primary-foreground shadow-glow hover:brightness-110 transition">
               Fungura CODEROOM <ArrowRight className="size-4" />
             </Link>
-            <Link to="/courses" className="inline-flex items-center gap-2 rounded-md border border-border px-6 py-3 font-medium hover:border-primary/60 transition">
-              Reba amasomo
-            </Link>
           </div>
         </div>
       </section>
