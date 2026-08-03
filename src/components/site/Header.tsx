@@ -4,10 +4,12 @@ import { useAuth } from "@/hooks/use-auth";
 import { Logo } from "./Logo";
 import { t } from "@/lib/i18n";
 
-const links = [
+const baseLinks = [
   { to: "/practice", label: t.nav_practice },
-  { to: "/payment", label: t.nav_payment, icon: true },
 ] as const;
+
+const paymentLink = { to: "/payment", label: t.nav_payment, icon: true } as const;
+
 
 export function Header() {
   const { user, signOut, loading, isAdmin } = useAuth();
