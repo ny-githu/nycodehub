@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      broadcasts: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          message: string
+          title: string
+          video_url: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          message?: string
+          title: string
+          video_url?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          message?: string
+          title?: string
+          video_url?: string | null
+        }
+        Relationships: []
+      }
       course_videos: {
         Row: {
           course_id: string
@@ -206,6 +233,81 @@ export type Database = {
         }
         Relationships: []
       }
+      nycoder_memory: {
+        Row: {
+          notes: string
+          turns: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          notes?: string
+          turns?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          notes?: string
+          turns?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      nycoder_settings: {
+        Row: {
+          id: number
+          model_chain: string[]
+          self_improve: boolean
+          system_prompt: string
+          temperature: number
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          model_chain?: string[]
+          self_improve?: boolean
+          system_prompt?: string
+          temperature?: number
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          model_chain?: string[]
+          self_improve?: boolean
+          system_prompt?: string
+          temperature?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      nycoder_training: {
+        Row: {
+          active: boolean
+          answer: string
+          created_at: string
+          id: string
+          prompt: string
+          tag: string
+        }
+        Insert: {
+          active?: boolean
+          answer: string
+          created_at?: string
+          id?: string
+          prompt: string
+          tag?: string
+        }
+        Update: {
+          active?: boolean
+          answer?: string
+          created_at?: string
+          id?: string
+          prompt?: string
+          tag?: string
+        }
+        Relationships: []
+      }
       payment_plans: {
         Row: {
           active: boolean
@@ -328,6 +430,27 @@ export type Database = {
           display_name?: string | null
           expires_at?: string | null
           id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      site_pages: {
+        Row: {
+          content: string
+          slug: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content?: string
+          slug: string
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          slug?: string
+          title?: string
           updated_at?: string
         }
         Relationships: []
