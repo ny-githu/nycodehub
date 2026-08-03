@@ -45,6 +45,21 @@ function Home() {
 
   return (
     <Layout>
+      {(broadcasts ?? []).length > 0 && (
+        <div className="container mx-auto max-w-7xl px-6 pt-6 space-y-3">
+          {(broadcasts ?? []).map((b) => (
+            <div key={b.id} className="rounded-xl border border-primary/40 bg-primary/10 p-4 animate-slide-up">
+              <div className="flex items-center gap-2 text-sm font-semibold">
+                <Megaphone className="size-4 text-primary-glow" /> {b.title}
+              </div>
+              {b.message && <p className="mt-1.5 text-sm text-muted-foreground whitespace-pre-line">{b.message}</p>}
+              {b.video_url && (
+                <video src={b.video_url} controls className="mt-3 w-full max-w-2xl rounded-lg border border-border" />
+              )}
+            </div>
+          ))}
+        </div>
+      )}
       <section className="relative overflow-hidden bg-hero">
         <img
           src={heroStudents}
