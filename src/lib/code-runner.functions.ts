@@ -7,7 +7,11 @@ import { assertActiveAccount } from "./access.server";
 const ENDPOINTS = [
   "https://emkc.org/api/v2/piston/execute",
   "https://piston.rickyshi.workers.dev/api/v2/execute",
+  "https://piston.thomasarmstrong.dev/api/v2/execute",
+  "https://api.piston.rs/api/v2/execute",
 ];
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 const RUNTIME: Record<string, { lang: string; file: string }> = {
   c: { lang: "c", file: "main.c" },
