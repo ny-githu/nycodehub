@@ -24,7 +24,7 @@ import { t } from "@/lib/i18n";
 export const Route = createFileRoute("/_authenticated/admin")({
   beforeLoad: async () => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw redirect({ to: "/login" });
+    if (!user) throw redirect({ to: "/login", search: { redirect: "/" } });
     const { data: role } = await supabase
       .from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").maybeSingle();
     if (!role) throw redirect({ to: "/" });

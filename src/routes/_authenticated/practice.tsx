@@ -10,8 +10,7 @@ import { nycoderAgent, type NycoderAction } from "@/lib/nycoder.functions";
 import type { Finding } from "@/lib/codehelper.functions";
 import { LANGS, getLang, TEMPLATE_HANDOFF_KEY, type LangKey, type ProjectFile } from "@/lib/templates";
 import {
-  Bot, ChevronDown, ChevronUp, Download, Eye, FileCode2, FlaskConical, FolderPlus, FolderUp, Hammer,
-  History, Loader2, PanelLeftClose, PanelLeftOpen, Play, Rocket, Sparkles, Terminal as TerminalIcon,
+  Bot, ChevronDown, ChevronUp, Download, Eye, FileCode2, FlaskConical, FolderPlus, FolderUp, Hammer, Loader2, PanelLeftClose, PanelLeftOpen, Play, Rocket, Sparkles, Terminal as TerminalIcon,
   Trash2, Upload, Wrench,
 } from "lucide-react";
 import { toast } from "sonner";
