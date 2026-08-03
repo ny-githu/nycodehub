@@ -4,6 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertActiveAccount } from "./access.server";
 
 import { callAIWithFallback, SMART_CHAIN, FAST_CHAIN } from "./ai-call.server";
+import { loadBrain, brainPrompt, rememberUser } from "./nycoder-brain.server";
 
 async function callAI(chain: string[], body: Record<string, unknown>) {
   return callAIWithFallback(chain, body);
