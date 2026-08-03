@@ -12,9 +12,12 @@ import {
   getPaymentPage,
 } from "@/lib/payments.functions";
 import { adminListMomoSms, adminUpdateMomoSms, adminAddMomoSms } from "@/lib/momo.functions";
-import { listAdminCourses } from "@/lib/courses.functions";
-import { adminListCourseVideos, adminCreateCourseVideo, adminDeleteCourseVideo } from "@/lib/course-admin.functions";
-import { Loader2, Trash2, ShieldCheck, UserPlus, CreditCard, Settings as SettingsIcon, Users, Receipt, CheckCircle2, XCircle, Clock, Pencil, Plus, Calendar, Search, Lock, Unlock, Video, Upload, Link2, PlayCircle, Smartphone } from "lucide-react";
+import {
+  adminGetNycoder, adminSaveNycoder, adminAddTraining, adminDeleteTraining,
+  adminAnalytics, adminListBroadcasts, adminSaveBroadcast, adminDeleteBroadcast,
+  adminListPages, adminSavePage,
+} from "@/lib/nycoder-admin.functions";
+import { Loader2, Trash2, ShieldCheck, UserPlus, CreditCard, Settings as SettingsIcon, Users, Receipt, CheckCircle2, XCircle, Clock, Pencil, Plus, Calendar, Search, Lock, Unlock, Smartphone, BarChart3, Bot, Megaphone, FileText, Save } from "lucide-react";
 import { toast } from "sonner";
 import { t } from "@/lib/i18n";
 
@@ -30,7 +33,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
 });
 
-type Tab = "users" | "plans" | "settings" | "payments" | "courses" | "momo";
+type Tab = "users" | "plans" | "settings" | "payments" | "momo" | "analytics" | "nycoder" | "broadcast" | "pages";
 
 function AdminPage() {
   const [tab, setTab] = useState<Tab>("payments");
@@ -71,8 +74,11 @@ function AdminPage() {
 
         <div className="flex flex-wrap gap-1 mb-6 border-b border-border">
           {([
+            ["analytics", BarChart3, "Imibare"],
             ["users", Users, t.admin_tab_users],
-            ["courses", Video, t.admin_tab_courses],
+            ["nycoder", Bot, "NYCODER"],
+            ["broadcast", Megaphone, "Ubutumwa"],
+            ["pages", FileText, "Impapuro"],
             ["payments", Receipt, t.admin_tab_payments],
             ["momo", Smartphone, "MoMo SMS"],
             ["plans", CreditCard, t.admin_tab_plans],
@@ -96,8 +102,11 @@ function AdminPage() {
         </div>
 
 
+        {tab === "analytics" && <AnalyticsTab />}
         {tab === "users" && <UsersTab />}
-        {tab === "courses" && <CoursesTab />}
+        {tab === "nycoder" && <NycoderTab />}
+        {tab === "broadcast" && <BroadcastTab />}
+        {tab === "pages" && <PagesTab />}
         {tab === "payments" && <PaymentsTab />}
         {tab === "momo" && <MomoTab />}
         {tab === "plans" && <PlansTab />}
