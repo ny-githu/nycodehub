@@ -103,11 +103,15 @@ export const nycoderAgent = createServerFn({ method: "POST" })
             ? "UMURIMO: kosora amakosa yose muri code, wandike dosiye zakosowe muri 'actions', hanyuma usobanure ibyo wahinduye."
             : "UMURIMO: ganira n'umukoresha kandi umufashe gutegura umushinga mbere y'uko ukorwa. Muri 'chat' ntukandike dosiye — 'actions' iba urutonde rusa keretse iyo umukoresha abisabye asobanutse; ahubwo mubaze ibibazo, mugire inama, wereke code ngufi muri 'reply'.";
 
-    const raw = await callAI(data.mode === "chat" ? FAST_CHAIN : SMART_CHAIN, {
-      temperature: data.mode === "chat" ? 0.4 : 0.15,
+    const brain = await loadBrain(context.userId);
+    const extra = brainPrompt(brain);
+    const chain = brain.chainOverride ?? (data.mode === "chat" ? FAST_CHAIN : SMART_CHAIN);
+
+    const raw = await callAI(chain, {
+      temperature: brain.temperature ?? (data.mode === "chat" ? 0.4 : 0.15),
       response_format: { type: "json_object" },
       messages: [
-        { role: "system", content: `${RULES}\n${task}` },
+        { role: "system", content: [RULES, task, extra].filter(Boolean).join("\n\n") },
         ...data.history.map((m) => ({ role: m.role, content: m.content })),
         {
           role: "user",
@@ -120,6 +124,14 @@ export const nycoderAgent = createServerFn({ method: "POST" })
     if (!parsed) return { reply: raw || "(nta gisubizo)", logic: "", blocked: false, actions: [], findings: [] } as NycoderResult;
     const safe = AgentSchema.safeParse(parsed);
     if (!safe.success) return { reply: raw.slice(0, 2000), logic: "", blocked: false, actions: [], findings: [] } as NycoderResult;
+
+    if (brain.selfImprove && !safe.data.blocked) {
+      await rememberUser(
+        context.userId,
+        `[${new Date().toISOString().slice(0, 10)}] ${data.language}/${data.mode}: ${data.message.slice(0, 140)}`,
+      ).catch(() => {});
+    }
+
     return {
       ...safe.data,
       actions: safe.data.actions.filter((a) => a.path.trim().length > 0),
