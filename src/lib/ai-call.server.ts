@@ -1,8 +1,7 @@
 /**
  * Resilient AI caller for NYCODEHUB.
- * Tries several models in order so NYCODER never goes down because one model
- * is rate-limited or out of credits. An optional OPENROUTER_API_KEY is used as
- * a last resort.
+ * OpenRouter is tried first (free, unlimited models), then the Lovable gateway.
+ * Several models are attempted in order so NYCODER never goes down.
  */
 
 const GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
@@ -23,7 +22,10 @@ export const FAST_CHAIN = [
   "google/gemini-2.5-flash-lite",
 ];
 
-const OPENROUTER_FALLBACK = [
+/** Free OpenRouter models, tried in order. */
+const OPENROUTER_CHAIN = [
+  "deepseek/deepseek-chat-v3.1:free",
+  "qwen/qwen3-coder:free",
   "google/gemini-2.0-flash-exp:free",
   "meta-llama/llama-3.3-70b-instruct:free",
 ];
@@ -49,13 +51,30 @@ function extract(json: unknown) {
 }
 
 /**
- * Calls the first model in `chain` that answers successfully.
- * Returns the text content of the answer.
+ * Calls the first model that answers successfully.
+ * OpenRouter first (free), Lovable gateway as backup.
  */
 export async function callAIWithFallback(chain: string[], body: Body): Promise<string> {
+  const orKey = process.env["OPENROUTER_API_KEY"];
   const key = process.env["LOVABLE_API_KEY"];
   let lastStatus = 0;
   let lastText = "";
+
+  if (orKey) {
+    for (const model of OPENROUTER_CHAIN) {
+      const res = await post(OPENROUTER, orKey, { model, ...body }).catch(() => null);
+      if (!res) continue;
+      if (res.ok) {
+        const text = extract(await res.json());
+        if (text.trim()) return text;
+        continue;
+      }
+      lastStatus = res.status;
+      lastText = (await res.text()).slice(0, 200);
+      if (!retryable(res.status)) break;
+      if (res.status === 429) await new Promise((r) => setTimeout(r, 700));
+    }
+  }
 
   if (key) {
     for (const model of chain) {
@@ -66,21 +85,8 @@ export async function callAIWithFallback(chain: string[], body: Body): Promise<s
         lastStatus = res.status;
         lastText = (await res.text()).slice(0, 200);
         if (!retryable(res.status)) break;
-        // A short pause helps with momentary rate limits before switching model.
         if (res.status === 429 && attempt === 0) await new Promise((r) => setTimeout(r, 900));
         else break;
-      }
-    }
-  }
-
-  const orKey = process.env["OPENROUTER_API_KEY"];
-  if (orKey) {
-    for (const model of OPENROUTER_FALLBACK) {
-      const res = await post(OPENROUTER, orKey, { model, ...body }).catch(() => null);
-      if (res?.ok) return extract(await res.json());
-      if (res) {
-        lastStatus = res.status;
-        lastText = (await res.text()).slice(0, 200);
       }
     }
   }
