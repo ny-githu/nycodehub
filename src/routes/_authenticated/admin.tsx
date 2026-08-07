@@ -538,13 +538,17 @@ function MomoTab() {
     <div className="space-y-6 animate-fade-in">
       <div className="rounded-lg border border-border bg-surface p-4">
         <h2 className="font-semibold mb-1 flex items-center gap-2"><Smartphone className="size-4 text-primary-glow" /> Ubutumwa bwa MoMo (0791294492)</h2>
-        <p className="text-xs text-muted-foreground mb-3">
-          Shyira SMS forwarder kuri telefoni yawe, itume ubutumwa bwa MTN MoMo kuri:
-          <code className="mx-1 rounded bg-background px-1 py-0.5 font-mono">POST /api/public/momo-sms</code>
-          ifite header <code className="rounded bg-background px-1 py-0.5 font-mono">x-momo-token</code> na body
-          <code className="mx-1 rounded bg-background px-1 py-0.5 font-mono">{"{ \"text\": \"<SMS>\" }"}</code>.
-          Sisitemu ikuramo transaction ID n'amafaranga, hanyuma iyishyira kuri urutonde rutegereje kwemezwa.
-        </p>
+        <div className="mb-3 space-y-2 text-xs leading-relaxed text-muted-foreground">
+          <p><strong className="text-foreground">Sender ntigomba kuba nimero.</strong> Mu filter ya SMS Forwarder andika amagambo agaragara ku butumwa bwawe, urugero <code className="rounded bg-background px-1 py-0.5 font-mono">MoMo</code>, <code className="rounded bg-background px-1 py-0.5 font-mono">MTN</code> cyangwa <code className="rounded bg-background px-1 py-0.5 font-mono">received</code>. Ushobora no guhitamo kohereza SMS zose niba filter yanze.</p>
+          <ol className="list-decimal space-y-1 pl-5">
+            <li>Kora rule nshya ya <strong className="text-foreground">HTTP POST / Webhook</strong>.</li>
+            <li>URL: <code className="break-all rounded bg-background px-1 py-0.5 font-mono">https://nycodehub.lovable.app/api/public/momo-sms</code></li>
+            <li>Header: <code className="rounded bg-background px-1 py-0.5 font-mono">x-momo-token</code> = token yawe yabitswe muri system.</li>
+            <li>JSON body: <code className="rounded bg-background px-1 py-0.5 font-mono">{"{\"message\":\"{message}\",\"from\":\"{sender}\"}"}</code>. Niba app ikoresha <code>text</code> cyangwa <code>body</code> aho gukoresha <code>message</code>, na byo biremewe.</li>
+            <li>Kanda <strong className="text-foreground">Test</strong>. Igisubizo cyiza ni <code className="rounded bg-background px-1 py-0.5 font-mono">{"{\"ok\":true}"}</code>.</li>
+          </ol>
+          <p>Sisitemu ihita ikuramo transaction ID n'amafaranga, ikayihuza n'uwiyandikishije, kandi ikamufungurira serivisi iyo transaction ihuye.</p>
+        </div>
         <div className="flex gap-2">
           <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Omeka SMS ya MoMo hano (test)" className="flex-1 rounded border border-border bg-background px-3 py-2 text-sm" />
           <button onClick={() => text.trim() && mAdd.mutate(text.trim())} disabled={mAdd.isPending} className="rounded bg-primary px-3 py-2 text-sm text-primary-foreground disabled:opacity-60">Ongeraho</button>
