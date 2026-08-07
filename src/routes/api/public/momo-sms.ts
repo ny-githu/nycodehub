@@ -1,12 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { createClient } from "@supabase/supabase-js";
 
 const BodySchema = z.object({
-  text: z.string().min(3).max(2000),
-  sender: z.string().max(60).optional(),
-  received_at: z.string().max(60).optional(),
-});
+  text: z.string().optional(),
+  message: z.string().optional(),
+  body: z.string().optional(),
+  sms: z.string().optional(),
+  subject: z.string().optional(),
+  sender: z.string().optional(),
+  from: z.string().optional(),
+  address: z.string().optional(),
+  received_at: z.string().optional(),
+  timestamp: z.union([z.string(), z.number()]).optional(),
+}).passthrough();
 
 function parseTransactionId(text: string): string | null {
   const patterns = [
@@ -37,39 +43,65 @@ export const Route = createFileRoute("/api/public/momo-sms")({
     handlers: {
       POST: async ({ request }) => {
         const token = process.env["MOMO_SMS_TOKEN"];
-        const provided = request.headers.get("x-momo-token") ?? "";
+        const url = new URL(request.url);
+        const bearer = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+        const provided = request.headers.get("x-momo-token") ?? bearer ?? url.searchParams.get("token") ?? "";
         if (!token || provided !== token) {
-          return new Response("Unauthorized", { status: 401 });
+          return Response.json({ ok: false, error: "Unauthorized: x-momo-token ntabwo ihuye" }, { status: 401 });
         }
 
-        let parsed: z.infer<typeof BodySchema>;
+        let raw: unknown;
         try {
-          parsed = BodySchema.parse(await request.json());
+          const contentType = request.headers.get("content-type") ?? "";
+          if (contentType.includes("application/json")) raw = await request.json();
+          else if (contentType.includes("form")) raw = Object.fromEntries((await request.formData()).entries());
+          else raw = { text: await request.text() };
         } catch {
-          return Response.json({ error: "invalid body" }, { status: 400 });
+          return Response.json({ ok: false, error: "Ubutumwa ntibusomeka" }, { status: 400 });
         }
+        const parsed = BodySchema.safeParse(raw);
+        if (!parsed.success) return Response.json({ ok: false, error: "Payload ntiyumvikana" }, { status: 400 });
+        const text = [parsed.data.text, parsed.data.message, parsed.data.body, parsed.data.sms, parsed.data.subject]
+          .find((value) => typeof value === "string" && value.trim().length >= 3)?.trim();
+        if (!text) return Response.json({ ok: false, error: "Shyiramo SMS muri text, message, body cyangwa sms" }, { status: 400 });
 
-        const supabase = createClient(
-          process.env["SUPABASE_URL"]!,
-          process.env["SUPABASE_SERVICE_ROLE_KEY"]!,
-          { auth: { persistSession: false } },
-        );
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-        const transactionId = parseTransactionId(parsed.text);
+        const transactionId = parseTransactionId(text);
         const row = {
-          raw_text: parsed.text,
+          raw_text: text,
           transaction_id: transactionId,
-          amount_rwf: parseAmount(parsed.text),
-          sender: parsed.sender ?? null,
-          payer_name: parsePayer(parsed.text),
-          received_at: parsed.received_at ?? new Date().toISOString(),
+          amount_rwf: parseAmount(text),
+          sender: parsed.data.sender ?? parsed.data.from ?? parsed.data.address ?? null,
+          payer_name: parsePayer(text),
+          received_at: parsed.data.received_at ?? (parsed.data.timestamp ? new Date(parsed.data.timestamp).toISOString() : new Date().toISOString()),
         };
 
-        const { error } = await supabase.from("momo_sms").upsert(row, { onConflict: "transaction_id", ignoreDuplicates: true });
+        const { data: saved, error } = await supabaseAdmin.from("momo_sms").upsert(row, { onConflict: "transaction_id", ignoreDuplicates: true }).select("id").maybeSingle();
         if (error && !/duplicate/i.test(error.message)) {
-          return Response.json({ error: error.message }, { status: 500 });
+          console.error("MoMo SMS save failed", error.message);
+          return Response.json({ ok: false, error: "Ubutumwa ntibwashoboye kubikwa" }, { status: 500 });
         }
-        return Response.json({ ok: true, transaction_id: transactionId, amount_rwf: row.amount_rwf });
+        let matched = false;
+        if (transactionId) {
+          const { data: claims } = await supabaseAdmin.from("payment_requests").select("id,user_id,plan_id").eq("status", "pending").ilike("transaction_id", transactionId).limit(1);
+          const claim = claims?.[0];
+          if (claim) {
+            const [{ data: plan }, { data: profile }] = await Promise.all([
+              supabaseAdmin.from("payment_plans").select("duration_days").eq("id", claim.plan_id).maybeSingle(),
+              supabaseAdmin.from("profiles").select("expires_at").eq("id", claim.user_id).maybeSingle(),
+            ]);
+            const base = profile?.expires_at && new Date(profile.expires_at) > new Date() ? new Date(profile.expires_at) : new Date();
+            base.setDate(base.getDate() + (plan?.duration_days ?? 0));
+            await Promise.all([
+              supabaseAdmin.from("profiles").update({ expires_at: base.toISOString(), disabled: false }).eq("id", claim.user_id),
+              supabaseAdmin.from("payment_requests").update({ status: "approved", reviewed_at: new Date().toISOString(), note: "Yemejwe na MoMo SMS" }).eq("id", claim.id),
+              saved?.id ? supabaseAdmin.from("momo_sms").update({ status: "confirmed", linked_request_id: claim.id }).eq("id", saved.id) : Promise.resolve(),
+            ]);
+            matched = true;
+          }
+        }
+        return Response.json({ ok: true, transaction_id: transactionId, amount_rwf: row.amount_rwf, matched });
       },
       OPTIONS: async () => new Response(null, { status: 204 }),
     },

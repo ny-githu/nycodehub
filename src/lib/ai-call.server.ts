@@ -1,10 +1,9 @@
 /**
  * Resilient AI caller for NYCODEHUB.
- * OpenRouter is tried first (free, unlimited models), then the Lovable gateway.
- * Several models are attempted in order so NYCODER never goes down.
+ * OpenRouter's free router is the primary and only provider for NYCODER.
+ * It chooses an available free model automatically and retries transient failures.
  */
 
-const GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const OPENROUTER = "https://openrouter.ai/api/v1/chat/completions";
 
 /** Strongest first, cheapest last — used for build/debug/fix work. */
@@ -22,13 +21,7 @@ export const FAST_CHAIN = [
   "google/gemini-2.5-flash-lite",
 ];
 
-/** Free OpenRouter models, tried in order. */
-const OPENROUTER_CHAIN = [
-  "deepseek/deepseek-chat-v3.1:free",
-  "qwen/qwen3-coder:free",
-  "google/gemini-2.0-flash-exp:free",
-  "meta-llama/llama-3.3-70b-instruct:free",
-];
+const OPENROUTER_MODEL = "openrouter/free";
 
 type Body = Record<string, unknown>;
 
@@ -40,7 +33,12 @@ function retryable(status: number) {
 async function post(url: string, key: string, body: Body) {
   return fetch(url, {
     method: "POST",
-    headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
+    headers: {
+      "content-type": "application/json",
+      authorization: `Bearer ${key}`,
+      "HTTP-Referer": "https://nycodehub.lovable.app",
+      "X-Title": "NYCODEHUB NYCODER",
+    },
     body: JSON.stringify(body),
   });
 }
@@ -52,51 +50,38 @@ function extract(json: unknown) {
 
 /**
  * Calls the first model that answers successfully.
- * OpenRouter first (free), Lovable gateway as backup.
+ * Uses OpenRouter's free model router. The chain parameter is retained so
+ * existing callers and admin settings remain backwards compatible.
  */
-export async function callAIWithFallback(chain: string[], body: Body): Promise<string> {
+export async function callAIWithFallback(_chain: string[], body: Body): Promise<string> {
   const orKey = process.env["OPENROUTER_API_KEY"];
-  const key = process.env["LOVABLE_API_KEY"];
   let lastStatus = 0;
   let lastText = "";
 
-  if (orKey) {
-    for (const model of OPENROUTER_CHAIN) {
-      const res = await post(OPENROUTER, orKey, { model, ...body }).catch(() => null);
-      if (!res) continue;
+  if (!orKey) throw new Error("NYCODER ntabwo irimo gutangira neza. Umuyobozi agomba kugenzura OpenRouter.");
+
+  for (let attempt = 0; attempt < 4; attempt++) {
+      const res = await post(OPENROUTER, orKey, { ...body, model: OPENROUTER_MODEL }).catch(() => null);
+      if (!res) {
+        await new Promise((resolve) => setTimeout(resolve, 600 * (attempt + 1)));
+        continue;
+      }
       if (res.ok) {
         const text = extract(await res.json());
         if (text.trim()) return text;
-        continue;
+        lastText = "empty response";
       }
-      lastStatus = res.status;
-      lastText = (await res.text()).slice(0, 200);
-      if (!retryable(res.status)) break;
-      if (res.status === 429) await new Promise((r) => setTimeout(r, 700));
-    }
-  }
-
-  if (key) {
-    for (const model of chain) {
-      for (let attempt = 0; attempt < 2; attempt++) {
-        const res = await post(GATEWAY, key, { model, ...body }).catch(() => null);
-        if (!res) break;
-        if (res.ok) return extract(await res.json());
+      else {
         lastStatus = res.status;
-        lastText = (await res.text()).slice(0, 200);
+        lastText = (await res.text()).slice(0, 240);
         if (!retryable(res.status)) break;
-        if (res.status === 429 && attempt === 0) await new Promise((r) => setTimeout(r, 900));
-        else break;
       }
-    }
+      await new Promise((resolve) => setTimeout(resolve, 800 * (attempt + 1)));
   }
 
-  if (!key && !orKey) throw new Error("NYCODER ntiyabashije gukora. Vugana n'umuyobozi.");
-  if (lastStatus === 402) {
-    throw new Error("Amafaranga ya AI yarangiye kuri modeli zose. Vugana n'umuyobozi (ashobora kongeramo credits cyangwa OPENROUTER_API_KEY).");
-  }
   if (lastStatus === 429) {
-    throw new Error("Ibibazo byinshi ku isaha imwe kuri modeli zose. Tegereza akanya gato usubiremo.");
+    throw new Error("NYCODER irimo kwakira abantu benshi. Ongera ugerageze mu kanya gato.");
   }
-  throw new Error(`NYCODER yagize ikibazo (${lastStatus || "network"}): ${lastText}`);
+  console.error("OpenRouter failure", lastStatus, lastText);
+  throw new Error("NYCODER ntiyashoboye gusubiza ubu. Ongera ugerageze mu kanya gato.");
 }
