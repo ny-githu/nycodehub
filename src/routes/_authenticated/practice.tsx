@@ -541,7 +541,7 @@ function Practice() {
     <div className="flex h-[100dvh] flex-col overflow-hidden bg-background">
       <Header />
       <div className="flex min-h-0 flex-1 flex-col">
-        <header className="flex h-12 shrink-0 flex-wrap items-center justify-between gap-2 border-b border-border px-3">
+        <header className="flex min-h-12 shrink-0 items-center justify-between gap-2 border-b border-border px-3">
           <div className="flex items-center gap-2">
             <button onClick={() => setFilesOpen((open) => !open)} title={t.practice_files} className="rounded p-1.5 text-muted-foreground hover:bg-surface hover:text-foreground">
               {filesOpen ? <PanelLeftClose className="size-4" /> : <PanelLeftOpen className="size-4" />}
@@ -551,12 +551,12 @@ function Practice() {
               {saved ? "✓ Byabitswe" : "Kubika..."}
             </span>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex min-w-0 items-center gap-2 overflow-x-auto py-1">
             <select value={langKey} onChange={(event) => setLangKey(event.target.value as LangKey)} className="rounded border border-border bg-surface px-2 py-1.5 text-xs font-mono">
               {LANGS.map((item) => <option key={item.key} value={item.key}>{item.label}</option>)}
             </select>
-            <label className="inline-flex items-center gap-1.5 text-xs text-muted-foreground"><input type="checkbox" checked={autoCheck} onChange={(e) => setAutoCheck(e.target.checked)} />NYCODER</label>
-            <label className="inline-flex cursor-pointer items-center gap-1.5 rounded border border-border px-2 py-1.5 text-xs text-muted-foreground hover:text-foreground">
+            <label className="hidden items-center gap-1.5 text-xs text-muted-foreground sm:inline-flex"><input type="checkbox" checked={autoCheck} onChange={(e) => setAutoCheck(e.target.checked)} />NYCODER</label>
+            <label className="hidden cursor-pointer items-center gap-1.5 rounded border border-border px-2 py-1.5 text-xs text-muted-foreground hover:text-foreground sm:inline-flex">
               <Upload className="size-3.5" />Dosiye
               <input type="file" multiple className="hidden" onChange={(e) => { void importFiles(e.target.files); e.target.value = ""; }} />
             </label>
@@ -583,9 +583,9 @@ function Practice() {
           </div>
         </header>
 
-        <div className="flex min-h-0 flex-1">
+        <div className="flex min-h-0 flex-1 max-md:flex-col">
           {filesOpen && (
-            <aside className="w-48 shrink-0 overflow-y-auto border-r border-border bg-background/60 animate-fade-in">
+            <aside className="w-48 shrink-0 overflow-y-auto border-r border-border bg-background/60 animate-fade-in max-md:hidden">
               <div className="flex h-9 items-center justify-between border-b border-border px-2">
                 <span className="text-[11px] font-semibold uppercase text-muted-foreground">{t.practice_files}</span>
                 <button onClick={createFile} title={t.practice_new_file} className="rounded p-1 text-muted-foreground hover:bg-surface hover:text-foreground"><FolderPlus className="size-4" /></button>
@@ -609,7 +609,7 @@ function Practice() {
           )}
 
           <section
-            className="relative flex min-w-0 flex-[3] flex-col border-r border-border"
+            className="relative flex min-w-0 flex-[3] flex-col border-r border-border max-md:min-h-0 max-md:basis-1/2 max-md:border-b max-md:border-r-0"
             onDragOver={(event) => { event.preventDefault(); setDragOver(true); }}
             onDragLeave={() => setDragOver(false)}
             onDrop={(event) => {
@@ -650,7 +650,7 @@ function Practice() {
             </div>
           </section>
 
-          <section className="flex min-w-0 flex-[2] flex-col">
+          <section className="flex min-w-0 flex-[2] flex-col max-md:min-h-0 max-md:basis-1/2">
             <div className="flex h-8 shrink-0 items-center gap-1 border-b border-border px-2 text-xs">
               <button
                 onClick={() => setPanelOverride("preview")}
@@ -673,14 +673,14 @@ function Practice() {
           </section>
         </div>
 
-        <section className={`shrink-0 border-t border-primary/40 bg-[#0b0b12] font-mono transition-all ${nycoderOpen ? "h-72" : "h-9"}`}>
+        <section className={`shrink-0 border-t border-primary/40 bg-surface font-mono transition-all ${nycoderOpen ? "h-72 max-md:h-56" : "h-9"}`}>
           <div className="flex h-9 items-center justify-between gap-2 border-b border-border px-3">
             <div className="flex items-center gap-1.5 text-xs">
               <span className={`text-primary-glow ${busy ? "animate-pulse" : ""}`}>▊</span>
               <button onClick={() => { setBottomTab("nycoder"); setNycoderOpen(true); }} className={`rounded px-2 py-1 font-bold tracking-wider ${bottomTab === "nycoder" ? "bg-primary/20 text-primary-glow" : "text-muted-foreground"}`}>NYCODER</button>
               <button onClick={() => { setBottomTab("terminal"); setNycoderOpen(true); }} className={`inline-flex items-center gap-1 rounded px-2 py-1 ${bottomTab === "terminal" ? "bg-primary/20 text-primary-glow" : "text-muted-foreground"}`}><TerminalIcon className="size-3" />Terminal</button>
             </div>
-            <div className="flex items-center gap-1.5">
+             <div className="flex items-center gap-1.5 overflow-x-auto">
               {busy && <Loader2 className="size-3.5 animate-spin text-primary-glow" />}
               {bottomTab === "nycoder" && MODES.map((item) => (
                 <button
@@ -721,13 +721,13 @@ function Practice() {
                 )}
                 {busy && <div className="text-muted-foreground">{t.practice_thinking}</div>}
               </div>
-              <form onSubmit={(event) => { event.preventDefault(); submitPrompt(); }} className="flex shrink-0 items-center gap-2 border-t border-border px-3 py-2 pb-4">
+              <form onSubmit={(event) => { event.preventDefault(); submitPrompt(); }} className="flex shrink-0 items-center gap-2 border-t border-border px-3 py-2 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
                 <span className="text-success">nycoder$</span>
-                <input
+                 <input
                   value={prompt}
                   onChange={(event) => setPrompt(event.target.value)}
                   placeholder={mode === "build" ? "Andika igitekerezo cy'umushinga, urugero: nkorere urubuga rw'ubucuruzi rufite cart..." : t.practice_helper_placeholder}
-                  className="flex-1 bg-transparent text-xs outline-none placeholder:text-muted-foreground"
+                   className="min-w-0 flex-1 bg-transparent text-xs outline-none placeholder:text-muted-foreground"
                 />
                 <button type="submit" disabled={busy} className="rounded bg-primary/25 px-2 py-1 text-[11px] text-primary-glow disabled:opacity-50">Ohereza</button>
               </form>
@@ -746,7 +746,7 @@ function Practice() {
               </div>
               <form
                 onSubmit={(event) => { event.preventDefault(); runCommand(termInput); setTermInput(""); }}
-                className="flex shrink-0 items-center gap-2 border-t border-border px-3 py-2 pb-4"
+                className="flex shrink-0 items-center gap-2 border-t border-border px-3 py-2 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
               >
                 <span className="text-primary-glow">nycodehub:~$</span>
                 <input
