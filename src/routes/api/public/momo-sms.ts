@@ -74,11 +74,18 @@ export const Route = createFileRoute("/api/public/momo-sms")({
           amount_rwf: parseAmount(text),
           sender: parsed.data.sender ?? parsed.data.from ?? parsed.data.address ?? null,
           payer_name: parsePayer(text),
-          received_at: parsed.data.received_at ?? (parsed.data.timestamp ? new Date(parsed.data.timestamp).toISOString() : new Date().toISOString()),
+          received_at: parsed.data.received_at ?? (parsed.data.timestamp
+            ? new Date(typeof parsed.data.timestamp === "number" && parsed.data.timestamp < 10_000_000_000 ? parsed.data.timestamp * 1000 : parsed.data.timestamp).toISOString()
+            : new Date().toISOString()),
         };
 
-        const { data: saved, error } = await supabaseAdmin.from("momo_sms").upsert(row, { onConflict: "transaction_id", ignoreDuplicates: true }).select("id").maybeSingle();
-        if (error && !/duplicate/i.test(error.message)) {
+        let saved: { id: string } | null = null;
+        const { data: inserted, error } = await supabaseAdmin.from("momo_sms").insert(row).select("id").maybeSingle();
+        saved = inserted;
+        if (error && /duplicate|unique/i.test(error.message) && transactionId) {
+          const { data: existing } = await supabaseAdmin.from("momo_sms").select("id").ilike("transaction_id", transactionId).maybeSingle();
+          saved = existing;
+        } else if (error) {
           console.error("MoMo SMS save failed", error.message);
           return Response.json({ ok: false, error: "Ubutumwa ntibwashoboye kubikwa" }, { status: 500 });
         }
