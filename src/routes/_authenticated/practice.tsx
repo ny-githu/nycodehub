@@ -473,7 +473,22 @@ function Practice() {
       setMessages((current) => [...current, { role: "assistant", content: error instanceof Error ? error.message : "Byanze", kind: "error" }]);
       setScan("idle");
     } finally { setBusy(false); }
-  }, [agent, applyActions, applyMarkers, busy, flyToFinding, messages, activeName]);
+  }, [agent, applyActions, applyMarkers, busy, flyToFinding, messages, activeName, docs]);
+
+  /** Inyandiko zishyirwa muri NYCODER kugira ngo izibuke igihe isubiza. */
+  const attachDocs = useCallback(async (list: FileList | null) => {
+    if (!list?.length) return;
+    const added: Doc[] = [];
+    for (const file of Array.from(list).slice(0, 10)) {
+      if (!DOC_EXT.test(file.name)) { toast.error(`${file.name}: ubu bwoko bw'inyandiko ntibwemewe`); continue; }
+      const text = (await file.text()).slice(0, 120_000);
+      added.push({ name: file.name, text });
+    }
+    if (!added.length) return;
+    setDocs((current) => [...current.filter((d) => !added.some((a) => a.name === d.name)), ...added].slice(-10));
+    toast.success(`NYCODER yakiriye inyandiko ${added.length}`);
+  }, []);
+
 
   useEffect(() => {
     if (!autoCheck || !mounted) return;
