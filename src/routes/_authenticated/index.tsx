@@ -83,9 +83,10 @@ function Home() {
           </p>
           <div className="mt-7 flex flex-wrap justify-center gap-3">
             <Link to="/practice" className="inline-flex items-center gap-2 rounded-md bg-gradient-primary px-6 py-3 font-medium text-primary-foreground shadow-glow hover:brightness-110 transition">
-              Fungura CODEROOM <ArrowRight className="size-4" />
+              {t.practice_h1} <ArrowRight className="size-4" />
             </Link>
           </div>
+
         </div>
       </section>
 
