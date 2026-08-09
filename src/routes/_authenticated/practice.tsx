@@ -10,11 +10,13 @@ import { nycoderAgent, type NycoderAction } from "@/lib/nycoder.functions";
 import type { Finding } from "@/lib/codehelper.functions";
 import { LANGS, getLang, TEMPLATE_HANDOFF_KEY, type LangKey, type ProjectFile } from "@/lib/templates";
 import {
-  Bot, ChevronDown, ChevronUp, Download, Eye, FileCode2, FlaskConical, FolderPlus, FolderUp, Hammer, Loader2, PanelLeftClose, PanelLeftOpen, Play, Rocket, Sparkles, Terminal as TerminalIcon,
+  Bot, ChevronDown, ChevronUp, Download, Eye, FileCode2, FolderPlus, FolderUp, Hammer, Loader2, PanelLeftClose, PanelLeftOpen, Paperclip, Play, Rocket, Sparkles, Terminal as TerminalIcon,
   Trash2, Upload, Wrench,
 } from "lucide-react";
 import { toast } from "sonner";
 import { t } from "@/lib/i18n";
+import { langFromFile } from "@/lib/templates";
+import { checkAiStatus, type AiStatus } from "@/lib/ai-health.functions";
 
 export const Route = createFileRoute("/_authenticated/practice")({
   head: () => ({ meta: [
@@ -28,8 +30,17 @@ export const Route = createFileRoute("/_authenticated/practice")({
   component: Practice,
 });
 
-let pyodidePromise: Promise<unknown> | null = null;
-async function loadPyodide() {
+type Pyodide = {
+  setStdout: (o: { batched: (v: string) => void }) => void;
+  setStderr: (o: { batched: (v: string) => void }) => void;
+  runPythonAsync: (v: string) => Promise<unknown>;
+  loadPackagesFromImports: (v: string) => Promise<unknown>;
+  loadPackage: (v: string | string[]) => Promise<unknown>;
+  pyimport: (v: string) => { install: (p: string) => Promise<unknown> };
+};
+
+let pyodidePromise: Promise<Pyodide> | null = null;
+async function loadPyodide(): Promise<Pyodide> {
   if (pyodidePromise) return pyodidePromise;
   pyodidePromise = (async () => {
     await new Promise<void>((resolve, reject) => {
@@ -39,15 +50,43 @@ async function loadPyodide() {
       script.onerror = () => reject(new Error("Python ntiyashoboye gutangira"));
       document.head.appendChild(script);
     });
-    const runtime = window as Window & { loadPyodide?: (config: { indexURL: string }) => Promise<unknown> };
+    const runtime = window as Window & { loadPyodide?: (config: { indexURL: string }) => Promise<Pyodide> };
     if (!runtime.loadPyodide) throw new Error("Python ntiyabonetse");
-    return runtime.loadPyodide({ indexURL: "https://cdn.jsdelivr.net/pyodide/v0.26.2/full/" });
+    const py = await runtime.loadPyodide({ indexURL: "https://cdn.jsdelivr.net/pyodide/v0.26.2/full/" });
+    await py.loadPackage("micropip").catch(() => {});
+    return py;
   })();
   return pyodidePromise;
 }
 
-const storageKey = (language: LangKey) => `nycodehub:project:${language}`;
+/** Loads every module a .py file imports — built-in wheels first, then PyPI via micropip. */
+async function preparePython(py: Pyodide, source: string, log: (line: string) => void) {
+  await py.loadPackagesFromImports(source).catch(() => {});
+  const imports = new Set<string>();
+  source.split("\n").forEach((line) => {
+    const direct = /^\s*import\s+([A-Za-z_][\w.]*)/.exec(line);
+    const from = /^\s*from\s+([A-Za-z_][\w.]*)\s+import/.exec(line);
+    const name = (direct?.[1] ?? from?.[1] ?? "").split(".")[0];
+    if (name) imports.add(name);
+  });
+  for (const name of imports) {
+    try {
+      await py.runPythonAsync(`import ${name}`);
+    } catch {
+      try {
+        log(`micropip: ${name} irakururwa…`);
+        const micropip = py.pyimport("micropip");
+        await micropip.install(name);
+      } catch {
+        log(`⚠ module "${name}" ntiboneka kuri Python ya browser.`);
+      }
+    }
+  }
+}
+
+const WORKSPACE_KEY = "nycodehub:workspace";
 const TEXT_EXT = /\.(html?|css|js|mjs|cjs|jsx|ts|tsx|json|md|txt|py|java|c|h|cpp|cc|hpp|cs|go|rs|php|rb|kt|swift|sh|sql|lua|dart|r|pl|scala|yml|yaml|env|toml|xml|svg|gitignore)$/i;
+const DOC_EXT = /\.(txt|md|json|csv|log|yml|yaml|xml|html?)$/i;
 const WEB_EXT = /\.(html?|css|js|mjs|jsx)$/i;
 
 const RUN_SH = `#!/bin/bash\nset -e\nif [ -f package.json ]; then npm install && npm start; exit 0; fi\nif [ -f main.py ]; then python3 main.py; exit 0; fi\nif [ -f index.html ]; then python3 -m http.server 8080; exit 0; fi\necho "Ongeraho amabwiriza yo gukora umushinga hano."\n`;
@@ -57,11 +96,11 @@ type Msg = { role: "user" | "assistant" | "system"; content: string; kind?: "err
 type AgentMode = "chat" | "build" | "debug" | "fix";
 type Panel = "preview" | "output";
 type BottomTab = "nycoder" | "terminal";
+type Doc = { name: string; text: string };
+type Snapshot = { files: ProjectFile[]; activeName: string; output?: string; messages?: Msg[] };
 
 function Practice() {
   const [mounted, setMounted] = useState(false);
-  const [langKey, setLangKey] = useState<LangKey>("html");
-  const lang = useMemo(() => getLang(langKey), [langKey]);
   const [files, setFiles] = useState<ProjectFile[]>([{ name: "index.html", content: LANGS[0].sample }]);
   const [activeName, setActiveName] = useState("index.html");
   const [output, setOutput] = useState("");
@@ -75,6 +114,8 @@ function Practice() {
   const [panelOverride, setPanelOverride] = useState<Panel | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const [pending, setPending] = useState<NycoderAction[]>([]);
+  const [docs, setDocs] = useState<Doc[]>([]);
+  const [aiStatus, setAiStatus] = useState<AiStatus | null>(null);
   const [messages, setMessages] = useState<Msg[]>([
     { role: "assistant", content: "Muraho! Ndi NYCODER. Muri 'Ganira' turaganira ku gitekerezo cyawe mbere yo kwandika dosiye — iyo witeguye, hitamo 'Ubaka'." },
   ]);
@@ -91,7 +132,10 @@ function Practice() {
   const debounceRef = useRef<number | null>(null);
   const checkRef = useRef<number | null>(null);
   const filesRef = useRef(files);
-  const langRef = useRef(langKey);
+  const langRef = useRef<LangKey>("html");
+  const activeRef = useRef(activeName);
+  const outputRef = useRef(output);
+  const messagesRef = useRef(messages);
   const logRef = useRef<HTMLDivElement | null>(null);
   const termRef = useRef<HTMLDivElement | null>(null);
   const editorRef = useRef<MonacoEditor.IStandaloneCodeEditor | null>(null);
@@ -99,11 +143,18 @@ function Practice() {
 
   const runRemote = useServerFn(runCodeRemote);
   const agent = useServerFn(nycoderAgent);
+  const aiCheck = useServerFn(checkAiStatus);
 
   const activeFile = files.find((file) => file.name === activeName) ?? files[0];
   const code = activeFile?.content ?? "";
+  // The language follows the file the user is in — no manual picker needed.
+  const langKey: LangKey = useMemo(() => langFromFile(activeName) ?? "html", [activeName]);
+  const lang = useMemo(() => getLang(langKey), [langKey]);
   filesRef.current = files;
   langRef.current = langKey;
+  activeRef.current = activeName;
+  outputRef.current = output;
+  messagesRef.current = messages;
 
   const naturalPanel: Panel = useMemo(() => {
     const name = activeFile?.name ?? "";
@@ -117,35 +168,65 @@ function Practice() {
 
   useEffect(() => {
     setMounted(true);
+    void aiCheck().then(setAiStatus).catch(() => setAiStatus({ ok: false, label: "Status itamenyekana", detail: "Ntibyashobotse kugenzura urufunguzo." }));
     const handoff = sessionStorage.getItem(TEMPLATE_HANDOFF_KEY);
     if (handoff) {
       sessionStorage.removeItem(TEMPLATE_HANDOFF_KEY);
       try {
         const parsed = JSON.parse(handoff) as { lang: LangKey; files: ProjectFile[] };
         if (parsed?.files?.length) {
-          localStorage.setItem(storageKey(parsed.lang), JSON.stringify(parsed.files));
-          localStorage.setItem("practice:lang", parsed.lang);
-          setLangKey(parsed.lang);
+          setFiles(parsed.files);
+          setActiveName(parsed.files[0].name);
           toast.success("Template yafunguwe muri CODEROOM");
           return;
         }
       } catch { /* ignore malformed handoff */ }
     }
-    const savedLanguage = localStorage.getItem("practice:lang") as LangKey | null;
-    if (savedLanguage && LANGS.some((item) => item.key === savedLanguage)) setLangKey(savedLanguage);
+    try {
+      const stored = localStorage.getItem(WORKSPACE_KEY);
+      const snapshot = stored ? JSON.parse(stored) as Snapshot : null;
+      if (snapshot?.files?.length) {
+        setFiles(snapshot.files);
+        setActiveName(snapshot.files.some((f) => f.name === snapshot.activeName) ? snapshot.activeName : snapshot.files[0].name);
+        if (snapshot.output) setOutput(snapshot.output);
+        if (snapshot.messages?.length) setMessages(snapshot.messages);
+      }
+    } catch { /* ignore corrupted snapshot */ }
+  }, [aiCheck]);
+
+  // Autosave, plus an immediate flush when the tab closes or the user navigates away.
+  const persist = useCallback(() => {
+    const snapshot: Snapshot = {
+      files: filesRef.current,
+      activeName: activeRef.current,
+      output: outputRef.current.slice(0, 20_000),
+      messages: messagesRef.current.slice(-40),
+    };
+    try { localStorage.setItem(WORKSPACE_KEY, JSON.stringify(snapshot)); setSaved(true); } catch { /* quota */ }
   }, []);
 
   useEffect(() => {
     if (!mounted) return;
-    localStorage.setItem("practice:lang", langKey);
-    const stored = localStorage.getItem(storageKey(langKey));
-    try {
-      const parsed = stored ? JSON.parse(stored) as ProjectFile[] : null;
-      const next = parsed?.length ? parsed : [{ name: lang.file, content: lang.sample }];
-      setFiles(next); setActiveName(next[0].name);
-    } catch { setFiles([{ name: lang.file, content: lang.sample }]); setActiveName(lang.file); }
-    setOutput(""); setPreviewHtml(""); setFindings([]); setPending([]);
-  }, [langKey, lang, mounted]);
+    setSaved(false);
+    const id = window.setTimeout(persist, 500);
+    return () => window.clearTimeout(id);
+  }, [files, activeName, messages, mounted, persist]);
+
+  useEffect(() => {
+    if (!mounted) return;
+    const flush = () => persist();
+    const onHidden = () => { if (document.visibilityState === "hidden") persist(); };
+    window.addEventListener("pagehide", flush);
+    window.addEventListener("beforeunload", flush);
+    document.addEventListener("visibilitychange", onHidden);
+    return () => {
+      persist();
+      window.removeEventListener("pagehide", flush);
+      window.removeEventListener("beforeunload", flush);
+      document.removeEventListener("visibilitychange", onHidden);
+    };
+  }, [mounted, persist]);
+
 
   useEffect(() => {
     if (!mounted) return;
