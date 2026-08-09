@@ -58,25 +58,25 @@ export async function callAIWithFallback(_chain: string[], body: Body): Promise<
   let lastStatus = 0;
   let lastText = "";
 
-  if (!orKey) throw new Error("NYCODER ntabwo irimo gutangira neza. Umuyobozi agomba kugenzura OpenRouter.");
+  if (!orKey) throw new Error("NYCODER ntabwo irimo gutangira neza. Umuyobozi agomba kugenzura OPENROUTER_API_KEY.");
 
-  for (let attempt = 0; attempt < 4; attempt++) {
-      const res = await post(OPENROUTER, orKey, { ...body, model: OPENROUTER_MODEL }).catch(() => null);
-      if (!res) {
-        await new Promise((resolve) => setTimeout(resolve, 600 * (attempt + 1)));
-        continue;
-      }
-      if (res.ok) {
-        const text = extract(await res.json());
-        if (text.trim()) return text;
-        lastText = "empty response";
-      }
-      else {
-        lastStatus = res.status;
-        lastText = (await res.text()).slice(0, 240);
-        if (!retryable(res.status)) break;
-      }
-      await new Promise((resolve) => setTimeout(resolve, 800 * (attempt + 1)));
+  // Fewer, faster attempts: users get an answer quickly instead of waiting on backoff.
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const res = await post(OPENROUTER, orKey, { ...body, model: OPENROUTER_MODEL }).catch(() => null);
+    if (!res) {
+      await new Promise((resolve) => setTimeout(resolve, 250 * (attempt + 1)));
+      continue;
+    }
+    if (res.ok) {
+      const text = extract(await res.json());
+      if (text.trim()) return text;
+      lastText = "empty response";
+    } else {
+      lastStatus = res.status;
+      lastText = (await res.text()).slice(0, 240);
+      if (!retryable(res.status)) break;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 300 * (attempt + 1)));
   }
 
   if (lastStatus === 429) {
@@ -85,3 +85,4 @@ export async function callAIWithFallback(_chain: string[], body: Body): Promise<
   console.error("OpenRouter failure", lastStatus, lastText);
   throw new Error("NYCODER ntiyashoboye gusubiza ubu. Ongera ugerageze mu kanya gato.");
 }
+

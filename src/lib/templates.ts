@@ -121,3 +121,17 @@ export const TEMPLATES: Template[] = [
 
 export const templatesFor = (lang: string) => TEMPLATES.filter((t) => t.lang === lang);
 export const TEMPLATE_HANDOFF_KEY = "nycodehub:template";
+
+const EXT_LANG: Record<string, LangKey> = {
+  html: "html", htm: "html", css: "html", js: "html", mjs: "html", cjs: "html", jsx: "html",
+  ts: "typescript", tsx: "typescript",
+  py: "python", java: "java", c: "c", h: "c", cpp: "cpp", cc: "cpp", hpp: "cpp",
+  cs: "csharp", go: "go", rs: "rust", php: "php", rb: "ruby", kt: "kotlin", swift: "swift",
+  sh: "bash", sql: "sql", lua: "lua", dart: "dart", r: "r", pl: "perl", scala: "scala",
+};
+
+/** Decides the language from the file itself, so the user never has to pick one. */
+export function langFromFile(name: string): LangKey | null {
+  const ext = name.split(".").pop()?.toLowerCase() ?? "";
+  return EXT_LANG[ext] ?? null;
+}

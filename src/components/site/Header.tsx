@@ -3,6 +3,8 @@ import { LogOut, ShieldCheck, CreditCard } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Logo } from "./Logo";
 import { t } from "@/lib/i18n";
+import { LanguageSwitch } from "./LanguageSwitch";
+
 
 const baseLinks = [
   { to: "/practice", label: t.nav_practice },
@@ -42,6 +44,7 @@ export function Header() {
           )}
         </nav>
         <div className="flex items-center gap-2">
+          <LanguageSwitch />
           {loading ? null : user ? (
             <>
               <span className="hidden sm:inline text-xs font-mono text-muted-foreground truncate max-w-[180px]">
@@ -53,14 +56,9 @@ export function Header() {
               >
                 <LogOut className="size-4" /> <span className="hidden sm:inline">{t.nav_signout}</span>
               </button>
-              <Link
-                to="/practice"
-                className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-md bg-gradient-primary text-primary-foreground shadow-glow hover:brightness-110 hover-scale transition"
-              >
-                {t.nav_open_lab}
-              </Link>
             </>
           ) : (
+
             <Link
               to="/login" search={{ redirect: "/" }}
               className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-md bg-gradient-primary text-primary-foreground shadow-glow hover:brightness-110 hover-scale transition"

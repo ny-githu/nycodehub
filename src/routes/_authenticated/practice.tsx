@@ -10,11 +10,13 @@ import { nycoderAgent, type NycoderAction } from "@/lib/nycoder.functions";
 import type { Finding } from "@/lib/codehelper.functions";
 import { LANGS, getLang, TEMPLATE_HANDOFF_KEY, type LangKey, type ProjectFile } from "@/lib/templates";
 import {
-  Bot, ChevronDown, ChevronUp, Download, Eye, FileCode2, FlaskConical, FolderPlus, FolderUp, Hammer, Loader2, PanelLeftClose, PanelLeftOpen, Play, Rocket, Sparkles, Terminal as TerminalIcon,
+  Bot, ChevronDown, ChevronUp, Download, Eye, FileCode2, FolderPlus, FolderUp, Hammer, Loader2, PanelLeftClose, PanelLeftOpen, Paperclip, Play, Rocket, Sparkles, Terminal as TerminalIcon,
   Trash2, Upload, Wrench,
 } from "lucide-react";
 import { toast } from "sonner";
 import { t } from "@/lib/i18n";
+import { langFromFile } from "@/lib/templates";
+import { checkAiStatus, type AiStatus } from "@/lib/ai-health.functions";
 
 export const Route = createFileRoute("/_authenticated/practice")({
   head: () => ({ meta: [
@@ -28,8 +30,17 @@ export const Route = createFileRoute("/_authenticated/practice")({
   component: Practice,
 });
 
-let pyodidePromise: Promise<unknown> | null = null;
-async function loadPyodide() {
+type Pyodide = {
+  setStdout: (o: { batched: (v: string) => void }) => void;
+  setStderr: (o: { batched: (v: string) => void }) => void;
+  runPythonAsync: (v: string) => Promise<unknown>;
+  loadPackagesFromImports: (v: string) => Promise<unknown>;
+  loadPackage: (v: string | string[]) => Promise<unknown>;
+  pyimport: (v: string) => { install: (p: string) => Promise<unknown> };
+};
+
+let pyodidePromise: Promise<Pyodide> | null = null;
+async function loadPyodide(): Promise<Pyodide> {
   if (pyodidePromise) return pyodidePromise;
   pyodidePromise = (async () => {
     await new Promise<void>((resolve, reject) => {
@@ -39,15 +50,43 @@ async function loadPyodide() {
       script.onerror = () => reject(new Error("Python ntiyashoboye gutangira"));
       document.head.appendChild(script);
     });
-    const runtime = window as Window & { loadPyodide?: (config: { indexURL: string }) => Promise<unknown> };
+    const runtime = window as Window & { loadPyodide?: (config: { indexURL: string }) => Promise<Pyodide> };
     if (!runtime.loadPyodide) throw new Error("Python ntiyabonetse");
-    return runtime.loadPyodide({ indexURL: "https://cdn.jsdelivr.net/pyodide/v0.26.2/full/" });
+    const py = await runtime.loadPyodide({ indexURL: "https://cdn.jsdelivr.net/pyodide/v0.26.2/full/" });
+    await py.loadPackage("micropip").catch(() => {});
+    return py;
   })();
   return pyodidePromise;
 }
 
-const storageKey = (language: LangKey) => `nycodehub:project:${language}`;
+/** Loads every module a .py file imports — built-in wheels first, then PyPI via micropip. */
+async function preparePython(py: Pyodide, source: string, log: (line: string) => void) {
+  await py.loadPackagesFromImports(source).catch(() => {});
+  const imports = new Set<string>();
+  source.split("\n").forEach((line) => {
+    const direct = /^\s*import\s+([A-Za-z_][\w.]*)/.exec(line);
+    const from = /^\s*from\s+([A-Za-z_][\w.]*)\s+import/.exec(line);
+    const name = (direct?.[1] ?? from?.[1] ?? "").split(".")[0];
+    if (name) imports.add(name);
+  });
+  for (const name of imports) {
+    try {
+      await py.runPythonAsync(`import ${name}`);
+    } catch {
+      try {
+        log(`micropip: ${name} irakururwa…`);
+        const micropip = py.pyimport("micropip");
+        await micropip.install(name);
+      } catch {
+        log(`⚠ module "${name}" ntiboneka kuri Python ya browser.`);
+      }
+    }
+  }
+}
+
+const WORKSPACE_KEY = "nycodehub:workspace";
 const TEXT_EXT = /\.(html?|css|js|mjs|cjs|jsx|ts|tsx|json|md|txt|py|java|c|h|cpp|cc|hpp|cs|go|rs|php|rb|kt|swift|sh|sql|lua|dart|r|pl|scala|yml|yaml|env|toml|xml|svg|gitignore)$/i;
+const DOC_EXT = /\.(txt|md|json|csv|log|yml|yaml|xml|html?)$/i;
 const WEB_EXT = /\.(html?|css|js|mjs|jsx)$/i;
 
 const RUN_SH = `#!/bin/bash\nset -e\nif [ -f package.json ]; then npm install && npm start; exit 0; fi\nif [ -f main.py ]; then python3 main.py; exit 0; fi\nif [ -f index.html ]; then python3 -m http.server 8080; exit 0; fi\necho "Ongeraho amabwiriza yo gukora umushinga hano."\n`;
@@ -57,11 +96,11 @@ type Msg = { role: "user" | "assistant" | "system"; content: string; kind?: "err
 type AgentMode = "chat" | "build" | "debug" | "fix";
 type Panel = "preview" | "output";
 type BottomTab = "nycoder" | "terminal";
+type Doc = { name: string; text: string };
+type Snapshot = { files: ProjectFile[]; activeName: string; output?: string; messages?: Msg[] };
 
 function Practice() {
   const [mounted, setMounted] = useState(false);
-  const [langKey, setLangKey] = useState<LangKey>("html");
-  const lang = useMemo(() => getLang(langKey), [langKey]);
   const [files, setFiles] = useState<ProjectFile[]>([{ name: "index.html", content: LANGS[0].sample }]);
   const [activeName, setActiveName] = useState("index.html");
   const [output, setOutput] = useState("");
@@ -75,6 +114,8 @@ function Practice() {
   const [panelOverride, setPanelOverride] = useState<Panel | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const [pending, setPending] = useState<NycoderAction[]>([]);
+  const [docs, setDocs] = useState<Doc[]>([]);
+  const [aiStatus, setAiStatus] = useState<AiStatus | null>(null);
   const [messages, setMessages] = useState<Msg[]>([
     { role: "assistant", content: "Muraho! Ndi NYCODER. Muri 'Ganira' turaganira ku gitekerezo cyawe mbere yo kwandika dosiye — iyo witeguye, hitamo 'Ubaka'." },
   ]);
@@ -91,7 +132,10 @@ function Practice() {
   const debounceRef = useRef<number | null>(null);
   const checkRef = useRef<number | null>(null);
   const filesRef = useRef(files);
-  const langRef = useRef(langKey);
+  const langRef = useRef<LangKey>("html");
+  const activeRef = useRef(activeName);
+  const outputRef = useRef(output);
+  const messagesRef = useRef(messages);
   const logRef = useRef<HTMLDivElement | null>(null);
   const termRef = useRef<HTMLDivElement | null>(null);
   const editorRef = useRef<MonacoEditor.IStandaloneCodeEditor | null>(null);
@@ -99,11 +143,18 @@ function Practice() {
 
   const runRemote = useServerFn(runCodeRemote);
   const agent = useServerFn(nycoderAgent);
+  const aiCheck = useServerFn(checkAiStatus);
 
   const activeFile = files.find((file) => file.name === activeName) ?? files[0];
   const code = activeFile?.content ?? "";
+  // The language follows the file the user is in — no manual picker needed.
+  const langKey: LangKey = useMemo(() => langFromFile(activeName) ?? "html", [activeName]);
+  const lang = useMemo(() => getLang(langKey), [langKey]);
   filesRef.current = files;
   langRef.current = langKey;
+  activeRef.current = activeName;
+  outputRef.current = output;
+  messagesRef.current = messages;
 
   const naturalPanel: Panel = useMemo(() => {
     const name = activeFile?.name ?? "";
@@ -117,45 +168,64 @@ function Practice() {
 
   useEffect(() => {
     setMounted(true);
+    void aiCheck().then(setAiStatus).catch(() => setAiStatus({ ok: false, label: "Status itamenyekana", detail: "Ntibyashobotse kugenzura urufunguzo." }));
     const handoff = sessionStorage.getItem(TEMPLATE_HANDOFF_KEY);
     if (handoff) {
       sessionStorage.removeItem(TEMPLATE_HANDOFF_KEY);
       try {
         const parsed = JSON.parse(handoff) as { lang: LangKey; files: ProjectFile[] };
         if (parsed?.files?.length) {
-          localStorage.setItem(storageKey(parsed.lang), JSON.stringify(parsed.files));
-          localStorage.setItem("practice:lang", parsed.lang);
-          setLangKey(parsed.lang);
+          setFiles(parsed.files);
+          setActiveName(parsed.files[0].name);
           toast.success("Template yafunguwe muri CODEROOM");
           return;
         }
       } catch { /* ignore malformed handoff */ }
     }
-    const savedLanguage = localStorage.getItem("practice:lang") as LangKey | null;
-    if (savedLanguage && LANGS.some((item) => item.key === savedLanguage)) setLangKey(savedLanguage);
+    try {
+      const stored = localStorage.getItem(WORKSPACE_KEY);
+      const snapshot = stored ? JSON.parse(stored) as Snapshot : null;
+      if (snapshot?.files?.length) {
+        setFiles(snapshot.files);
+        setActiveName(snapshot.files.some((f) => f.name === snapshot.activeName) ? snapshot.activeName : snapshot.files[0].name);
+        if (snapshot.output) setOutput(snapshot.output);
+        if (snapshot.messages?.length) setMessages(snapshot.messages);
+      }
+    } catch { /* ignore corrupted snapshot */ }
+  }, [aiCheck]);
+
+  // Autosave, plus an immediate flush when the tab closes or the user navigates away.
+  const persist = useCallback(() => {
+    const snapshot: Snapshot = {
+      files: filesRef.current,
+      activeName: activeRef.current,
+      output: outputRef.current.slice(0, 20_000),
+      messages: messagesRef.current.slice(-40),
+    };
+    try { localStorage.setItem(WORKSPACE_KEY, JSON.stringify(snapshot)); setSaved(true); } catch { /* quota */ }
   }, []);
 
   useEffect(() => {
     if (!mounted) return;
-    localStorage.setItem("practice:lang", langKey);
-    const stored = localStorage.getItem(storageKey(langKey));
-    try {
-      const parsed = stored ? JSON.parse(stored) as ProjectFile[] : null;
-      const next = parsed?.length ? parsed : [{ name: lang.file, content: lang.sample }];
-      setFiles(next); setActiveName(next[0].name);
-    } catch { setFiles([{ name: lang.file, content: lang.sample }]); setActiveName(lang.file); }
-    setOutput(""); setPreviewHtml(""); setFindings([]); setPending([]);
-  }, [langKey, lang, mounted]);
+    setSaved(false);
+    const id = window.setTimeout(persist, 500);
+    return () => window.clearTimeout(id);
+  }, [files, activeName, messages, mounted, persist]);
 
   useEffect(() => {
     if (!mounted) return;
-    setSaved(false);
-    const id = window.setTimeout(() => {
-      localStorage.setItem(storageKey(langKey), JSON.stringify(files));
-      setSaved(true);
-    }, 600);
-    return () => window.clearTimeout(id);
-  }, [files, langKey, mounted]);
+    const flush = () => persist();
+    const onHidden = () => { if (document.visibilityState === "hidden") persist(); };
+    window.addEventListener("pagehide", flush);
+    window.addEventListener("beforeunload", flush);
+    document.addEventListener("visibilitychange", onHidden);
+    return () => {
+      persist();
+      window.removeEventListener("pagehide", flush);
+      window.removeEventListener("beforeunload", flush);
+      document.removeEventListener("visibilitychange", onHidden);
+    };
+  }, [mounted, persist]);
 
   useEffect(() => { logRef.current?.scrollTo({ top: logRef.current.scrollHeight }); }, [messages, busy]);
   useEffect(() => { termRef.current?.scrollTo({ top: termRef.current.scrollHeight }); }, [termLines]);
@@ -258,14 +328,16 @@ function Practice() {
         setPreviewHtml(buildWebPreview());
       } else if (current.mode === "pyodide") {
         setOutput(t.practice_python_starting);
-        const py = await loadPyodide() as { setStdout: (o: { batched: (v: string) => void }) => void; setStderr: (o: { batched: (v: string) => void }) => void; runPythonAsync: (v: string) => Promise<unknown> };
+        const py = await loadPyodide();
         const buffer: string[] = [];
         py.setStdout({ batched: (v) => buffer.push(v) }); py.setStderr({ batched: (v) => buffer.push(v) });
         const source = filesRef.current.find((f) => f.name === activeName)?.content ?? code;
+        await preparePython(py, source, (line) => setOutput((prev) => `${prev}\n${line}`.trim()));
         try { await py.runPythonAsync(source); setOutput(buffer.join("\n") || t.practice_no_output); }
         catch (error) {
           setOutput(`${buffer.join("\n")}\n${error instanceof Error ? error.message : String(error)}`.trim());
         }
+
       } else {
         setOutput(t.practice_running_server);
         const entry = filesRef.current.find((f) => f.name === activeName) ?? filesRef.current[0];
@@ -279,40 +351,8 @@ function Practice() {
     } finally { setRunning(false); }
   }, [activeName, code, runRemote]);
 
-  const runTests = useCallback(async () => {
-    const testFiles = filesRef.current.filter((f) => /(^|\/|[._-])(test|tests|spec)([._-]|\/|\.)/i.test(f.name));
-    setPanelOverride("output");
-    if (!testFiles.length) {
-      setOutput("Nta dosiye za test zabonetse.\nKora dosiye ifite 'test' mu izina (urugero: app.test.js cyangwa test_main.py).");
-      return;
-    }
-    setRunning(true);
-    setOutput(`▶ Gutangiza test ${testFiles.length}...`);
-    try {
-      const current = getLang(langRef.current);
-      const results: string[] = [];
-      for (const file of testFiles) {
-        if (current.mode === "web") {
-          const outcome = await runJsTest(file, filesRef.current);
-          results.push(outcome);
-        } else if (current.mode === "pyodide") {
-          const py = await loadPyodide() as { setStdout: (o: { batched: (v: string) => void }) => void; setStderr: (o: { batched: (v: string) => void }) => void; runPythonAsync: (v: string) => Promise<unknown> };
-          const buffer: string[] = [];
-          py.setStdout({ batched: (v) => buffer.push(v) }); py.setStderr({ batched: (v) => buffer.push(v) });
-          try { await py.runPythonAsync(file.content); results.push(`✓ PASS ${file.name}\n${buffer.join("\n")}`); }
-          catch (error) { results.push(`✗ FAIL ${file.name}\n${error instanceof Error ? error.message : String(error)}`); }
-        } else {
-          const result = await runRemote({ data: { language: current.key, source: file.content, entry: file.name, files: filesRef.current } });
-          const ok = !result.stderr && result.status !== "error";
-          results.push(`${ok ? "✓ PASS" : "✗ FAIL"} ${file.name}\n${[result.stdout, result.stderr].filter(Boolean).join("\n")}`);
-        }
-      }
-      const passed = results.filter((r) => r.startsWith("✓")).length;
-      setOutput(`${results.join("\n\n")}\n\n──────────\n${passed}/${results.length} test zatsinze.`);
-    } catch (error) {
-      setOutput(error instanceof Error ? error.message : "Test zananiranye");
-    } finally { setRunning(false); }
-  }, [runRemote]);
+
+
 
   useEffect(() => {
     if (lang.mode !== "web") return;
@@ -393,8 +433,9 @@ function Practice() {
         .slice(-10)
         .map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));
       const result = await agent({
-        data: { language: langRef.current, mode: requested, files: filesRef.current, history, message: text },
+        data: { language: langRef.current, mode: requested, files: filesRef.current, history, documents: docs, message: text },
       });
+
 
       if (result.blocked) {
         setScan("bad");
@@ -432,7 +473,22 @@ function Practice() {
       setMessages((current) => [...current, { role: "assistant", content: error instanceof Error ? error.message : "Byanze", kind: "error" }]);
       setScan("idle");
     } finally { setBusy(false); }
-  }, [agent, applyActions, applyMarkers, busy, flyToFinding, messages, activeName]);
+  }, [agent, applyActions, applyMarkers, busy, flyToFinding, messages, activeName, docs]);
+
+  /** Inyandiko zishyirwa muri NYCODER kugira ngo izibuke igihe isubiza. */
+  const attachDocs = useCallback(async (list: FileList | null) => {
+    if (!list?.length) return;
+    const added: Doc[] = [];
+    for (const file of Array.from(list).slice(0, 10)) {
+      if (!DOC_EXT.test(file.name)) { toast.error(`${file.name}: ubu bwoko bw'inyandiko ntibwemewe`); continue; }
+      const text = (await file.text()).slice(0, 120_000);
+      added.push({ name: file.name, text });
+    }
+    if (!added.length) return;
+    setDocs((current) => [...current.filter((d) => !added.some((a) => a.name === d.name)), ...added].slice(-10));
+    toast.success(`NYCODER yakiriye inyandiko ${added.length}`);
+  }, []);
+
 
   useEffect(() => {
     if (!autoCheck || !mounted) return;
@@ -478,7 +534,7 @@ function Practice() {
           "  new <dosiye>        — kora dosiye nshya",
           "  rm <dosiye>         — siba dosiye",
           "  run                 — koresha umushinga",
-          "  test                — koresha test zose",
+          
           "  download            — kuramo umushinga (zip)",
           "  deploy              — kuramo deployment package",
           "  ny <ubutumwa>       — baza NYCODER",
@@ -515,7 +571,6 @@ function Practice() {
         break;
       }
       case "run": void run(); pushTerm("▶ gukora..."); break;
-      case "test": void runTests(); pushTerm("▶ test..."); break;
       case "download": downloadProject(); pushTerm("✓ zip yakuwemo", "ok"); break;
       case "deploy": exportDeployment(); pushTerm("✓ deployment package yakuwemo", "ok"); break;
       case "ny":
@@ -526,7 +581,8 @@ function Practice() {
       case "clear": setTermLines([]); break;
       default: pushTerm(`${command}: iri bwiriza ntiryumvikana. Andika 'help'.`, "error");
     }
-  }, [pushTerm, run, runTests, send, mode]);
+  }, [pushTerm, run, send, mode]);
+
 
   const errorCount = findings.filter((f) => f.severity === "error").length;
   const warnCount = findings.filter((f) => f.severity === "warning").length;
@@ -552,10 +608,17 @@ function Practice() {
             </span>
           </div>
           <div className="flex min-w-0 items-center gap-2 overflow-x-auto py-1">
-            <select value={langKey} onChange={(event) => setLangKey(event.target.value as LangKey)} className="rounded border border-border bg-surface px-2 py-1.5 text-xs font-mono">
-              {LANGS.map((item) => <option key={item.key} value={item.key}>{item.label}</option>)}
-            </select>
-            <label className="hidden items-center gap-1.5 text-xs text-muted-foreground sm:inline-flex"><input type="checkbox" checked={autoCheck} onChange={(e) => setAutoCheck(e.target.checked)} />NYCODER</label>
+            <span className="hidden rounded border border-border px-2 py-1 text-[11px] font-mono text-muted-foreground sm:inline">{lang.label}</span>
+            <span
+              title={aiStatus?.detail ?? ""}
+              className={`inline-flex items-center gap-1.5 rounded border px-2 py-1 text-[11px] font-mono ${
+                aiStatus == null ? "border-border text-muted-foreground" : aiStatus.ok ? "border-success/50 text-success" : "border-destructive/50 text-destructive"
+              }`}
+            >
+              <span className={`size-1.5 rounded-full ${aiStatus == null ? "bg-muted-foreground animate-pulse" : aiStatus.ok ? "bg-success" : "bg-destructive"}`} />
+              NYCODER
+            </span>
+            <label className="hidden items-center gap-1.5 text-xs text-muted-foreground sm:inline-flex"><input type="checkbox" checked={autoCheck} onChange={(e) => setAutoCheck(e.target.checked)} />Auto</label>
             <label className="hidden cursor-pointer items-center gap-1.5 rounded border border-border px-2 py-1.5 text-xs text-muted-foreground hover:text-foreground sm:inline-flex">
               <Upload className="size-3.5" />Dosiye
               <input type="file" multiple className="hidden" onChange={(e) => { void importFiles(e.target.files); e.target.value = ""; }} />
@@ -572,9 +635,7 @@ function Practice() {
                 onChange={(e) => { void importFiles(e.target.files, true); e.target.value = ""; }}
               />
             </label>
-            <button onClick={() => void runTests()} disabled={running} className="inline-flex items-center gap-1.5 rounded border border-border px-2 py-1.5 text-xs text-muted-foreground hover:text-foreground disabled:opacity-60">
-              <FlaskConical className="size-3.5" />Test
-            </button>
+
             <button onClick={() => void run()} disabled={running} className="inline-flex items-center gap-1.5 rounded bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-60">
               {running ? <Loader2 className="size-3.5 animate-spin" /> : <Play className="size-3.5" />}{t.practice_run}
             </button>
@@ -721,16 +782,35 @@ function Practice() {
                 )}
                 {busy && <div className="text-muted-foreground">{t.practice_thinking}</div>}
               </div>
-              <form onSubmit={(event) => { event.preventDefault(); submitPrompt(); }} className="flex shrink-0 items-center gap-2 border-t border-border px-3 py-2 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-                <span className="text-success">nycoder$</span>
-                 <input
+              {docs.length > 0 && (
+                <div className="flex shrink-0 flex-wrap gap-1.5 border-t border-border px-3 py-1.5 text-[10px]">
+                  {docs.map((doc) => (
+                    <span key={doc.name} className="inline-flex items-center gap-1 rounded border border-primary/40 bg-primary/10 px-1.5 py-0.5 text-primary-glow">
+                      {doc.name}
+                      <button onClick={() => setDocs((current) => current.filter((d) => d.name !== doc.name))} className="hover:text-destructive">×</button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              <form onSubmit={(event) => { event.preventDefault(); submitPrompt(); }} className="flex shrink-0 items-end gap-2 border-t border-border px-3 py-2 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+                <span className="pb-1 text-success">nycoder$</span>
+                <label title="Ongeraho inyandiko (NYCODER izayibika mu bwenge)" className="cursor-pointer pb-1 text-muted-foreground hover:text-primary-glow">
+                  <Paperclip className="size-4" />
+                  <input type="file" multiple accept=".txt,.md,.json,.csv,.log,.yml,.yaml,.xml,.html" className="hidden" onChange={(e) => { void attachDocs(e.target.files); e.target.value = ""; }} />
+                </label>
+                <textarea
                   value={prompt}
                   onChange={(event) => setPrompt(event.target.value)}
-                  placeholder={mode === "build" ? "Andika igitekerezo cy'umushinga, urugero: nkorere urubuga rw'ubucuruzi rufite cart..." : t.practice_helper_placeholder}
-                   className="min-w-0 flex-1 bg-transparent text-xs outline-none placeholder:text-muted-foreground"
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); submitPrompt(); }
+                  }}
+                  rows={3}
+                  placeholder={mode === "build" ? "Andika igitekerezo cy'umushinga (Enter = ohereza, Shift+Enter = umurongo mushya)…" : t.practice_helper_placeholder}
+                  className="min-h-[3.5rem] max-h-40 min-w-0 flex-1 resize-y bg-transparent text-xs leading-relaxed outline-none placeholder:text-muted-foreground"
                 />
                 <button type="submit" disabled={busy} className="rounded bg-primary/25 px-2 py-1 text-[11px] text-primary-glow disabled:opacity-50">Ohereza</button>
               </form>
+
             </div>
           )}
 
@@ -762,25 +842,4 @@ function Practice() {
       </div>
     </div>
   );
-}
-
-async function runJsTest(file: ProjectFile, all: ProjectFile[]): Promise<string> {
-  const helpers = all
-    .filter((f) => (f.name.endsWith(".js") || f.name.endsWith(".mjs")) && f.name !== file.name)
-    .map((f) => f.content)
-    .join("\n");
-  const harness = `
-let __pass = 0, __fail = 0; const __log = [];
-function assert(cond, msg){ if(cond){__pass++; __log.push("  ✓ " + (msg||"assert"));} else {__fail++; __log.push("  ✗ " + (msg||"assert"));} }
-function assertEqual(a,b,msg){ assert(JSON.stringify(a)===JSON.stringify(b), (msg||"") + " (" + JSON.stringify(a) + " === " + JSON.stringify(b) + ")"); }
-function test(name, fn){ try { fn(); __pass++; __log.push("  ✓ " + name); } catch(e){ __fail++; __log.push("  ✗ " + name + " — " + e.message); } }
-`;
-  try {
-    // eslint-disable-next-line no-new-func
-    const runner = new Function(`${harness}\n${helpers}\n${file.content}\nreturn {p:__pass,f:__fail,l:__log};`);
-    const result = runner() as { p: number; f: number; l: string[] };
-    return `${result.f ? "✗ FAIL" : "✓ PASS"} ${file.name}\n${result.l.join("\n")}`;
-  } catch (error) {
-    return `✗ FAIL ${file.name}\n  ${error instanceof Error ? error.message : String(error)}`;
-  }
 }

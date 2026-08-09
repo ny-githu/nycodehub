@@ -1,28 +1,42 @@
 import { useEffect, useState } from "react";
-import { Download, MonitorDown, Smartphone } from "lucide-react";
+import { Download } from "lucide-react";
 import { toast } from "sonner";
+import { t } from "@/lib/i18n";
 
 type InstallPrompt = Event & {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 };
 
+/**
+ * The browser fires beforeinstallprompt very early, so we capture it at module
+ * load. Without this the event is lost and the install button can't install.
+ */
+let captured: InstallPrompt | null = null;
+const listeners = new Set<(prompt: InstallPrompt | null) => void>();
+
+if (typeof window !== "undefined") {
+  window.addEventListener("beforeinstallprompt", (event) => {
+    event.preventDefault();
+    captured = event as InstallPrompt;
+    listeners.forEach((listener) => listener(captured));
+  });
+}
+
 export function InstallAppButton() {
   const [prompt, setPrompt] = useState<InstallPrompt | null>(null);
   const [installed, setInstalled] = useState(false);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    const standalone = window.matchMedia("(display-mode: standalone)").matches;
-    setInstalled(standalone);
-    const capture = (event: Event) => {
-      event.preventDefault();
-      setPrompt(event as InstallPrompt);
-    };
+    setInstalled(window.matchMedia("(display-mode: standalone)").matches);
+    setPrompt(captured);
+    const listener = (next: InstallPrompt | null) => setPrompt(next);
+    listeners.add(listener);
     const complete = () => setInstalled(true);
-    window.addEventListener("beforeinstallprompt", capture);
     window.addEventListener("appinstalled", complete);
     return () => {
-      window.removeEventListener("beforeinstallprompt", capture);
+      listeners.delete(listener);
       window.removeEventListener("appinstalled", complete);
     };
   }, []);
@@ -31,9 +45,18 @@ export function InstallAppButton() {
 
   async function install() {
     if (prompt) {
-      await prompt.prompt();
-      const choice = await prompt.userChoice;
-      if (choice.outcome === "accepted") setPrompt(null);
+      setBusy(true);
+      try {
+        await prompt.prompt();
+        const choice = await prompt.userChoice;
+        if (choice.outcome === "accepted") {
+          captured = null;
+          setPrompt(null);
+          toast.success("NYCODEHUB irimo kwishyirwa kuri device yawe…");
+        }
+      } finally {
+        setBusy(false);
+      }
       return;
     }
     const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
@@ -49,12 +72,11 @@ export function InstallAppButton() {
     <button
       type="button"
       onClick={() => void install()}
-      className="inline-flex items-center gap-2 rounded-md border border-primary/50 px-3 py-2 font-mono text-xs text-primary-glow transition hover:bg-primary/10"
+      disabled={busy}
+      className="inline-flex items-center gap-2 rounded-md border border-primary/50 px-3 py-2 font-mono text-xs text-primary-glow transition hover:bg-primary/10 disabled:opacity-60"
     >
-      <Download className="size-4 md:hidden" />
-      <Smartphone className="hidden size-4 sm:block md:hidden" />
-      <MonitorDown className="hidden size-4 md:block" />
-      Shyira kuri telefoni cyangwa PC
+      <Download className="size-4" />
+      {t.install_app}
     </button>
   );
 }

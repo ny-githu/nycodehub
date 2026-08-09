@@ -5,6 +5,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { Layout } from "@/components/site/Layout";
 import { LANGS, TEMPLATES, TEMPLATE_HANDOFF_KEY, templatesFor, type LangKey } from "@/lib/templates";
 import { listBroadcasts } from "@/lib/nycoder-admin.functions";
+import { t } from "@/lib/i18n";
+
 import { ArrowRight, Code2, Megaphone, Play, Sparkles, Terminal } from "lucide-react";
 import heroStudents from "@/assets/hero-students.jpg";
 import codingHands from "@/assets/coding-hands.jpg";
@@ -83,9 +85,10 @@ function Home() {
           </p>
           <div className="mt-7 flex flex-wrap justify-center gap-3">
             <Link to="/practice" className="inline-flex items-center gap-2 rounded-md bg-gradient-primary px-6 py-3 font-medium text-primary-foreground shadow-glow hover:brightness-110 transition">
-              Fungura CODEROOM <ArrowRight className="size-4" />
+              {t.practice_h1} <ArrowRight className="size-4" />
             </Link>
           </div>
+
         </div>
       </section>
 

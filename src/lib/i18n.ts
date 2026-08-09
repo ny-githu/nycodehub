@@ -1,5 +1,5 @@
-// Kinyarwanda strings — single language. Keep keys stable.
-export const t = {
+// Multi-language strings. The user picks the language; Kinyarwanda is the default.
+const rw = {
   // brand
   tagline: "Iga kuvumbura porogaramu mu kunyuranya nayo",
   // nav
@@ -9,7 +9,8 @@ export const t = {
   nav_admin: "Ubuyobozi",
   nav_signin: "Injira",
   nav_signout: "Sohoka",
-  nav_open_lab: "Fungura CODEROOM",
+  nav_open_lab: "CODEROOM",
+  nav_language: "Ururimi",
   // auth
   signin_title: "Injira",
   signin_subtitle: "Konti zihabwa n'umuyobozi w'urubuga",
@@ -56,16 +57,16 @@ export const t = {
   courses_back: "Garuka",
   // practice
   practice_h1: "CODEROOM",
-  practice_subtitle: "Andika code, ihite igarura ibisubizo — mu Kinyarwanda.",
+  practice_subtitle: "Andika code, ihite igarura ibisubizo.",
   practice_run: "Tangira",
   practice_reset: "Subiramo",
   practice_autorun: "Igarura wenyine",
   practice_helper: "NYCODER",
   practice_helper_off: "Funga NYCODER",
   practice_helper_on: "Fungura NYCODER",
-  practice_helper_placeholder: "Andika ikibazo cyangwa 'suzuma' hanyuma ukande Enter…",
+  practice_helper_placeholder: "Andika ikibazo cyangwa igitekerezo cy'umushinga…",
   practice_helper_ask: "Baza",
-  practice_helper_intro: "NYCODER isuzuma code yawe mu Kinyarwanda. Kanda Ctrl+Space isuzume ako kanya.",
+  practice_helper_intro: "NYCODER isuzuma code yawe kandi ikayikosora.",
   practice_helper_static: "Ibyifashishwa byihuse",
   practice_output: "Ibisubizo",
   practice_preview: "Igaragaza",
@@ -170,6 +171,141 @@ export const t = {
   admin_set_expiry_prompt: "Itariki konti izarangiraho (YYYY-MM-DD) — wisiga ubusa nta tariki:",
   // footer
   footer_rights: "Uburenganzira bwose burabitswe.",
-} as const;
+  install_app: "Shyira kuri telefoni cyangwa PC",
+};
 
-export type TKey = keyof typeof t;
+type Dict = typeof rw;
+
+const en: Dict = {
+  ...rw,
+  tagline: "Learn to build software by breaking and fixing it",
+  nav_courses: "Courses",
+  nav_practice: "CODEROOM",
+  nav_payment: "Payment",
+  nav_admin: "Admin",
+  nav_signin: "Sign in",
+  nav_signout: "Sign out",
+  nav_open_lab: "CODEROOM",
+  nav_language: "Language",
+  signin_title: "Sign in",
+  signin_subtitle: "Accounts are issued by the site admin",
+  email: "email",
+  password: "password",
+  signin_btn: "Sign in",
+  signin_busy: "One moment…",
+  signin_welcome: "Welcome",
+  signin_failed: "Sign in failed",
+  signin_no_account: "No account? Ask the admin to create one.",
+  loading: "loading…",
+  copy: "Copy",
+  copied: "Copied",
+  save: "Save",
+  cancel: "Cancel",
+  delete: "Delete",
+  edit: "Edit",
+  add: "Add",
+  search: "Search…",
+  yes: "Yes",
+  no: "No",
+  home_h1_a: "Learn to build software",
+  home_h1_b: "by solving problems",
+  home_h1_c: ", not by watching.",
+  home_lead: "NYCODEHUB is a hands-on platform for building software. A real terminal. Real code. Real problems — right in your browser.",
+  home_cta_lab: "Start coding",
+  home_cta_courses: "Browse courses",
+  home_pick_track: "Pick your track",
+  home_pick_track_lead: "Tracks for absolute beginners up to professionals.",
+  home_all_courses: "All courses",
+  home_cta_strip_h: "Stop reading. Start building.",
+  home_cta_strip_p: "Every NYCODEHUB lesson pairs a short video with a live workspace. Write it, run it, break it, fix it.",
+  courses_label: "/ courses",
+  courses_h1: "Courses",
+  courses_lead: "Project-based courses with video and practice.",
+  courses_open: "Open",
+  courses_topics: "Topics",
+  courses_no_videos: "No videos yet for this course. Check back later.",
+  courses_all: "All",
+  courses_back: "Back",
+  practice_subtitle: "Write code and see the result instantly.",
+  practice_run: "Run",
+  practice_reset: "Reset",
+  practice_autorun: "Auto run",
+  practice_helper_off: "Close NYCODER",
+  practice_helper_on: "Open NYCODER",
+  practice_helper_placeholder: "Ask a question or describe your project…",
+  practice_helper_ask: "Ask",
+  practice_helper_intro: "NYCODER reviews and fixes your code.",
+  practice_helper_static: "Quick snippets",
+  practice_output: "Output",
+  practice_preview: "Preview",
+  practice_thinking: "Thinking…",
+  practice_files: "Files",
+  practice_new_file: "New file",
+  practice_download: "Download project",
+  practice_project_saved: "Project saved to your computer",
+  practice_snippets: "click to copy",
+  practice_running_server: "Running on the server…",
+  practice_no_output: "(no output)",
+  practice_python_starting: "Starting Python…",
+  payment_h1: "Payment",
+  payment_sub: "Continue your NYCODEHUB access",
+  payment_disabled: "Your account is disabled",
+  payment_disabled_p: "Pay one of the plans below to keep using the courses and CODEROOM.",
+  payment_active: "Account active",
+  payment_expires: "expires",
+  payment_step1: "1. Send the money",
+  payment_step1_lead: "Use MoMo and send to this code:",
+  payment_step2: "2. Pick a plan",
+  payment_step2_empty: "No plans available. Contact the admin.",
+  payment_step3: "3. Send your transaction ID",
+  payment_txn_placeholder: "MoMo transaction ID (e.g. 1234ABCD)",
+  payment_submit: "Submit for approval",
+  payment_pick_plan: "Pick a plan",
+  payment_history: "Your payment history",
+  payment_history_empty: "No payments submitted.",
+  payment_status_pending: "pending",
+  payment_status_approved: "approved",
+  payment_status_rejected: "rejected",
+  payment_submitted: "Sent! The admin will approve it shortly.",
+  payment_th_date: "date",
+  payment_th_txn: "transaction",
+  payment_th_amount: "amount",
+  payment_th_status: "status",
+  payment_days_unit: "days",
+  admin_sub: "Manage users, content and payments",
+  admin_tab_users: "Users",
+  admin_tab_payments: "Payments",
+  admin_tab_plans: "Plans",
+  admin_tab_settings: "Settings",
+  admin_search_email: "Search by email…",
+  footer_rights: "All rights reserved.",
+  install_app: "Install on phone or PC",
+};
+
+export const LOCALES = [
+  { code: "rw", label: "Kinyarwanda" },
+  { code: "en", label: "English" },
+] as const;
+
+export type Locale = (typeof LOCALES)[number]["code"];
+
+const DICTS: Record<Locale, Dict> = { rw, en };
+const STORAGE_KEY = "nycodehub:locale";
+
+export function getLocale(): Locale {
+  if (typeof localStorage === "undefined") return "rw";
+  const stored = localStorage.getItem(STORAGE_KEY);
+  return stored === "en" || stored === "rw" ? stored : "rw";
+}
+
+export function setLocale(next: Locale) {
+  localStorage.setItem(STORAGE_KEY, next);
+  window.location.reload();
+}
+
+/** Reads from the locale the user chose, at access time. */
+export const t = new Proxy({} as Dict, {
+  get: (_target, key: string) => DICTS[getLocale()][key as keyof Dict] ?? rw[key as keyof Dict],
+}) as Dict;
+
+export type TKey = keyof Dict;
