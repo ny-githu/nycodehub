@@ -84,6 +84,7 @@ export const nycoderAgent = createServerFn({ method: "POST" })
         mode: z.enum(["chat", "build", "debug", "fix"]).default("chat"),
         files: z.array(FileSchema).max(60).default([]),
         history: z.array(MessageSchema).max(24).default([]),
+        documents: z.array(z.object({ name: z.string().min(1).max(200), text: z.string().max(120_000) })).max(10).default([]),
         message: z.string().min(1).max(6000),
       })
       .parse(i),
@@ -93,6 +94,12 @@ export const nycoderAgent = createServerFn({ method: "POST" })
     const workspace = data.files.length
       ? data.files.map((f) => `### DOSIYE: ${f.name}\n${f.content}`).join("\n\n")
       : "(umushinga ntacyo urimo)";
+
+    const docs = data.documents.length
+      ? data.documents
+          .map((d) => `### INYANDIKO: ${d.name}\n${d.text.slice(0, 40_000)}`)
+          .join("\n\n")
+      : "";
 
     const task =
       data.mode === "build"
@@ -111,14 +118,23 @@ export const nycoderAgent = createServerFn({ method: "POST" })
       temperature: brain.temperature ?? (data.mode === "chat" ? 0.4 : 0.15),
       response_format: { type: "json_object" },
       messages: [
-        { role: "system", content: [RULES, task, extra].filter(Boolean).join("\n\n") },
+        {
+          role: "system",
+          content: [
+            RULES,
+            task,
+            docs ? "INYANDIKO ZATANZWE N'UMUKORESHA: uzikoreshe nk'isoko ry'ukuri, uzibuke mu kiganiro cyose." : "",
+            extra,
+          ].filter(Boolean).join("\n\n"),
+        },
         ...data.history.map((m) => ({ role: m.role, content: m.content })),
         {
           role: "user",
-          content: `Ururimi nyamukuru: ${data.language}\n\nUMUSHINGA URIHO:\n${workspace}\n\nUBUTUMWA: ${data.message}`,
+          content: `Ururimi nyamukuru: ${data.language}\n\nUMUSHINGA URIHO:\n${workspace}${docs ? `\n\nINYANDIKO:\n${docs}` : ""}\n\nUBUTUMWA: ${data.message}`,
         },
       ],
     });
+
 
     const parsed = parseJson(raw);
     if (!parsed) return { reply: raw || "(nta gisubizo)", logic: "", blocked: false, actions: [], findings: [] } as NycoderResult;
