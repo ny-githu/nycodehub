@@ -3,6 +3,8 @@ import { LogOut, ShieldCheck, CreditCard } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Logo } from "./Logo";
 import { t } from "@/lib/i18n";
+import { LanguageSwitch } from "./LanguageSwitch";
+
 
 const baseLinks = [
   { to: "/practice", label: t.nav_practice },
