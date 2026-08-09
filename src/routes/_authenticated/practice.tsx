@@ -518,7 +518,7 @@ function Practice() {
           "  new <dosiye>        — kora dosiye nshya",
           "  rm <dosiye>         — siba dosiye",
           "  run                 — koresha umushinga",
-          "  test                — koresha test zose",
+          
           "  download            — kuramo umushinga (zip)",
           "  deploy              — kuramo deployment package",
           "  ny <ubutumwa>       — baza NYCODER",
