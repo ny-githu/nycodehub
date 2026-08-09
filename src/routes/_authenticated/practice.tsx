@@ -592,10 +592,17 @@ function Practice() {
             </span>
           </div>
           <div className="flex min-w-0 items-center gap-2 overflow-x-auto py-1">
-            <select value={langKey} onChange={(event) => setLangKey(event.target.value as LangKey)} className="rounded border border-border bg-surface px-2 py-1.5 text-xs font-mono">
-              {LANGS.map((item) => <option key={item.key} value={item.key}>{item.label}</option>)}
-            </select>
-            <label className="hidden items-center gap-1.5 text-xs text-muted-foreground sm:inline-flex"><input type="checkbox" checked={autoCheck} onChange={(e) => setAutoCheck(e.target.checked)} />NYCODER</label>
+            <span className="hidden rounded border border-border px-2 py-1 text-[11px] font-mono text-muted-foreground sm:inline">{lang.label}</span>
+            <span
+              title={aiStatus?.detail ?? ""}
+              className={`inline-flex items-center gap-1.5 rounded border px-2 py-1 text-[11px] font-mono ${
+                aiStatus == null ? "border-border text-muted-foreground" : aiStatus.ok ? "border-success/50 text-success" : "border-destructive/50 text-destructive"
+              }`}
+            >
+              <span className={`size-1.5 rounded-full ${aiStatus == null ? "bg-muted-foreground animate-pulse" : aiStatus.ok ? "bg-success" : "bg-destructive"}`} />
+              NYCODER
+            </span>
+            <label className="hidden items-center gap-1.5 text-xs text-muted-foreground sm:inline-flex"><input type="checkbox" checked={autoCheck} onChange={(e) => setAutoCheck(e.target.checked)} />Auto</label>
             <label className="hidden cursor-pointer items-center gap-1.5 rounded border border-border px-2 py-1.5 text-xs text-muted-foreground hover:text-foreground sm:inline-flex">
               <Upload className="size-3.5" />Dosiye
               <input type="file" multiple className="hidden" onChange={(e) => { void importFiles(e.target.files); e.target.value = ""; }} />
@@ -612,9 +619,7 @@ function Practice() {
                 onChange={(e) => { void importFiles(e.target.files, true); e.target.value = ""; }}
               />
             </label>
-            <button onClick={() => void runTests()} disabled={running} className="inline-flex items-center gap-1.5 rounded border border-border px-2 py-1.5 text-xs text-muted-foreground hover:text-foreground disabled:opacity-60">
-              <FlaskConical className="size-3.5" />Test
-            </button>
+
             <button onClick={() => void run()} disabled={running} className="inline-flex items-center gap-1.5 rounded bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-60">
               {running ? <Loader2 className="size-3.5 animate-spin" /> : <Play className="size-3.5" />}{t.practice_run}
             </button>
