@@ -843,24 +843,3 @@ function Practice() {
     </div>
   );
 }
-
-async function runJsTest(file: ProjectFile, all: ProjectFile[]): Promise<string> {
-  const helpers = all
-    .filter((f) => (f.name.endsWith(".js") || f.name.endsWith(".mjs")) && f.name !== file.name)
-    .map((f) => f.content)
-    .join("\n");
-  const harness = `
-let __pass = 0, __fail = 0; const __log = [];
-function assert(cond, msg){ if(cond){__pass++; __log.push("  ✓ " + (msg||"assert"));} else {__fail++; __log.push("  ✗ " + (msg||"assert"));} }
-function assertEqual(a,b,msg){ assert(JSON.stringify(a)===JSON.stringify(b), (msg||"") + " (" + JSON.stringify(a) + " === " + JSON.stringify(b) + ")"); }
-function test(name, fn){ try { fn(); __pass++; __log.push("  ✓ " + name); } catch(e){ __fail++; __log.push("  ✗ " + name + " — " + e.message); } }
-`;
-  try {
-    // eslint-disable-next-line no-new-func
-    const runner = new Function(`${harness}\n${helpers}\n${file.content}\nreturn {p:__pass,f:__fail,l:__log};`);
-    const result = runner() as { p: number; f: number; l: string[] };
-    return `${result.f ? "✗ FAIL" : "✓ PASS"} ${file.name}\n${result.l.join("\n")}`;
-  } catch (error) {
-    return `✗ FAIL ${file.name}\n  ${error instanceof Error ? error.message : String(error)}`;
-  }
-}
