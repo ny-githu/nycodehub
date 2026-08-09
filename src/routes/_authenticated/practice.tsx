@@ -328,14 +328,16 @@ function Practice() {
         setPreviewHtml(buildWebPreview());
       } else if (current.mode === "pyodide") {
         setOutput(t.practice_python_starting);
-        const py = await loadPyodide() as { setStdout: (o: { batched: (v: string) => void }) => void; setStderr: (o: { batched: (v: string) => void }) => void; runPythonAsync: (v: string) => Promise<unknown> };
+        const py = await loadPyodide();
         const buffer: string[] = [];
         py.setStdout({ batched: (v) => buffer.push(v) }); py.setStderr({ batched: (v) => buffer.push(v) });
         const source = filesRef.current.find((f) => f.name === activeName)?.content ?? code;
+        await preparePython(py, source, (line) => setOutput((prev) => `${prev}\n${line}`.trim()));
         try { await py.runPythonAsync(source); setOutput(buffer.join("\n") || t.practice_no_output); }
         catch (error) {
           setOutput(`${buffer.join("\n")}\n${error instanceof Error ? error.message : String(error)}`.trim());
         }
+
       } else {
         setOutput(t.practice_running_server);
         const entry = filesRef.current.find((f) => f.name === activeName) ?? filesRef.current[0];
