@@ -227,17 +227,6 @@ function Practice() {
     };
   }, [mounted, persist]);
 
-
-  useEffect(() => {
-    if (!mounted) return;
-    setSaved(false);
-    const id = window.setTimeout(() => {
-      localStorage.setItem(storageKey(langKey), JSON.stringify(files));
-      setSaved(true);
-    }, 600);
-    return () => window.clearTimeout(id);
-  }, [files, langKey, mounted]);
-
   useEffect(() => { logRef.current?.scrollTo({ top: logRef.current.scrollHeight }); }, [messages, busy]);
   useEffect(() => { termRef.current?.scrollTo({ top: termRef.current.scrollHeight }); }, [termLines]);
 
