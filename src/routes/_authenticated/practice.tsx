@@ -766,16 +766,35 @@ function Practice() {
                 )}
                 {busy && <div className="text-muted-foreground">{t.practice_thinking}</div>}
               </div>
-              <form onSubmit={(event) => { event.preventDefault(); submitPrompt(); }} className="flex shrink-0 items-center gap-2 border-t border-border px-3 py-2 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-                <span className="text-success">nycoder$</span>
-                 <input
+              {docs.length > 0 && (
+                <div className="flex shrink-0 flex-wrap gap-1.5 border-t border-border px-3 py-1.5 text-[10px]">
+                  {docs.map((doc) => (
+                    <span key={doc.name} className="inline-flex items-center gap-1 rounded border border-primary/40 bg-primary/10 px-1.5 py-0.5 text-primary-glow">
+                      {doc.name}
+                      <button onClick={() => setDocs((current) => current.filter((d) => d.name !== doc.name))} className="hover:text-destructive">×</button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              <form onSubmit={(event) => { event.preventDefault(); submitPrompt(); }} className="flex shrink-0 items-end gap-2 border-t border-border px-3 py-2 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+                <span className="pb-1 text-success">nycoder$</span>
+                <label title="Ongeraho inyandiko (NYCODER izayibika mu bwenge)" className="cursor-pointer pb-1 text-muted-foreground hover:text-primary-glow">
+                  <Paperclip className="size-4" />
+                  <input type="file" multiple accept=".txt,.md,.json,.csv,.log,.yml,.yaml,.xml,.html" className="hidden" onChange={(e) => { void attachDocs(e.target.files); e.target.value = ""; }} />
+                </label>
+                <textarea
                   value={prompt}
                   onChange={(event) => setPrompt(event.target.value)}
-                  placeholder={mode === "build" ? "Andika igitekerezo cy'umushinga, urugero: nkorere urubuga rw'ubucuruzi rufite cart..." : t.practice_helper_placeholder}
-                   className="min-w-0 flex-1 bg-transparent text-xs outline-none placeholder:text-muted-foreground"
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); submitPrompt(); }
+                  }}
+                  rows={3}
+                  placeholder={mode === "build" ? "Andika igitekerezo cy'umushinga (Enter = ohereza, Shift+Enter = umurongo mushya)…" : t.practice_helper_placeholder}
+                  className="min-h-[3.5rem] max-h-40 min-w-0 flex-1 resize-y bg-transparent text-xs leading-relaxed outline-none placeholder:text-muted-foreground"
                 />
                 <button type="submit" disabled={busy} className="rounded bg-primary/25 px-2 py-1 text-[11px] text-primary-glow disabled:opacity-50">Ohereza</button>
               </form>
+
             </div>
           )}
 
