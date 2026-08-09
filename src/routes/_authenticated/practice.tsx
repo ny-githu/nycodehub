@@ -351,40 +351,8 @@ function Practice() {
     } finally { setRunning(false); }
   }, [activeName, code, runRemote]);
 
-  const runTests = useCallback(async () => {
-    const testFiles = filesRef.current.filter((f) => /(^|\/|[._-])(test|tests|spec)([._-]|\/|\.)/i.test(f.name));
-    setPanelOverride("output");
-    if (!testFiles.length) {
-      setOutput("Nta dosiye za test zabonetse.\nKora dosiye ifite 'test' mu izina (urugero: app.test.js cyangwa test_main.py).");
-      return;
-    }
-    setRunning(true);
-    setOutput(`▶ Gutangiza test ${testFiles.length}...`);
-    try {
-      const current = getLang(langRef.current);
-      const results: string[] = [];
-      for (const file of testFiles) {
-        if (current.mode === "web") {
-          const outcome = await runJsTest(file, filesRef.current);
-          results.push(outcome);
-        } else if (current.mode === "pyodide") {
-          const py = await loadPyodide() as { setStdout: (o: { batched: (v: string) => void }) => void; setStderr: (o: { batched: (v: string) => void }) => void; runPythonAsync: (v: string) => Promise<unknown> };
-          const buffer: string[] = [];
-          py.setStdout({ batched: (v) => buffer.push(v) }); py.setStderr({ batched: (v) => buffer.push(v) });
-          try { await py.runPythonAsync(file.content); results.push(`✓ PASS ${file.name}\n${buffer.join("\n")}`); }
-          catch (error) { results.push(`✗ FAIL ${file.name}\n${error instanceof Error ? error.message : String(error)}`); }
-        } else {
-          const result = await runRemote({ data: { language: current.key, source: file.content, entry: file.name, files: filesRef.current } });
-          const ok = !result.stderr && result.status !== "error";
-          results.push(`${ok ? "✓ PASS" : "✗ FAIL"} ${file.name}\n${[result.stdout, result.stderr].filter(Boolean).join("\n")}`);
-        }
-      }
-      const passed = results.filter((r) => r.startsWith("✓")).length;
-      setOutput(`${results.join("\n\n")}\n\n──────────\n${passed}/${results.length} test zatsinze.`);
-    } catch (error) {
-      setOutput(error instanceof Error ? error.message : "Test zananiranye");
-    } finally { setRunning(false); }
-  }, [runRemote]);
+
+
 
   useEffect(() => {
     if (lang.mode !== "web") return;
