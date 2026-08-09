@@ -142,11 +142,15 @@ export const nycoderAgent = createServerFn({ method: "POST" })
     if (!safe.success) return { reply: raw.slice(0, 2000), logic: "", blocked: false, actions: [], findings: [] } as NycoderResult;
 
     if (brain.selfImprove && !safe.data.blocked) {
+      const docNote = data.documents.length
+        ? ` | inyandiko: ${data.documents.map((d) => `${d.name} (${d.text.slice(0, 120).replace(/\s+/g, " ")}…)`).join("; ")}`
+        : "";
       await rememberUser(
         context.userId,
-        `[${new Date().toISOString().slice(0, 10)}] ${data.language}/${data.mode}: ${data.message.slice(0, 140)}`,
+        `[${new Date().toISOString().slice(0, 10)}] ${data.language}/${data.mode}: ${data.message.slice(0, 140)}${docNote}`,
       ).catch(() => {});
     }
+
 
     return {
       ...safe.data,
