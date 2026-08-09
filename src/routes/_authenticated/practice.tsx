@@ -555,7 +555,6 @@ function Practice() {
         break;
       }
       case "run": void run(); pushTerm("▶ gukora..."); break;
-      case "test": void runTests(); pushTerm("▶ test..."); break;
       case "download": downloadProject(); pushTerm("✓ zip yakuwemo", "ok"); break;
       case "deploy": exportDeployment(); pushTerm("✓ deployment package yakuwemo", "ok"); break;
       case "ny":
@@ -566,7 +565,8 @@ function Practice() {
       case "clear": setTermLines([]); break;
       default: pushTerm(`${command}: iri bwiriza ntiryumvikana. Andika 'help'.`, "error");
     }
-  }, [pushTerm, run, runTests, send, mode]);
+  }, [pushTerm, run, send, mode]);
+
 
   const errorCount = findings.filter((f) => f.severity === "error").length;
   const warnCount = findings.filter((f) => f.severity === "warning").length;
