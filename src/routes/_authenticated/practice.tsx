@@ -433,8 +433,9 @@ function Practice() {
         .slice(-10)
         .map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));
       const result = await agent({
-        data: { language: langRef.current, mode: requested, files: filesRef.current, history, message: text },
+        data: { language: langRef.current, mode: requested, files: filesRef.current, history, documents: docs, message: text },
       });
+
 
       if (result.blocked) {
         setScan("bad");
