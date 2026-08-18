@@ -2,13 +2,11 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { assertActiveAccount } from "./access.server";
 
 export const getCourseBySlug = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ slug: z.string().min(1).max(120) }).parse(i))
   .handler(async ({ data, context }) => {
-    await assertActiveAccount(context.userId);
 
     const { data: course, error } = await supabaseAdmin
       .from("courses").select("*").eq("slug", data.slug).maybeSingle();

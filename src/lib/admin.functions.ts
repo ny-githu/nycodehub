@@ -65,3 +65,36 @@ export const adminSetUserDisabled = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+/** All users with their roles — free platform, no expiry or plans. */
+export const adminUsersOverview = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.userId);
+    const { data: list, error } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+    if (error) throw new Error(error.message);
+    const [{ data: roles }, { data: profiles }] = await Promise.all([
+      supabaseAdmin.from("user_roles").select("user_id, role"),
+      supabaseAdmin.from("profiles").select("id, disabled"),
+    ]);
+    const roleMap = new Map<string, string[]>();
+    for (const r of roles ?? []) {
+      const arr = roleMap.get(r.user_id as string) ?? [];
+      arr.push(r.role as string);
+      roleMap.set(r.user_id as string, arr);
+    }
+    const disabledMap = new Map((profiles ?? []).map((p) => [p.id as string, !!p.disabled]));
+    return list.users.map((u) => {
+      const userRoles = roleMap.get(u.id) ?? [];
+      const disabled = disabledMap.get(u.id) ?? false;
+      return {
+        id: u.id,
+        email: u.email ?? "",
+        created_at: u.created_at,
+        roles: userRoles,
+        is_admin: userRoles.includes("admin"),
+        disabled,
+        active: !disabled,
+      };
+    });
+  });

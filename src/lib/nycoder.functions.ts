@@ -1,7 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { assertActiveAccount } from "./access.server";
 
 import { callAIWithFallback, SMART_CHAIN, FAST_CHAIN } from "./ai-call.server";
 import { loadBrain, brainPrompt, rememberUser } from "./nycoder-brain.server";
@@ -90,7 +89,6 @@ export const nycoderAgent = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
-    await assertActiveAccount(context.userId);
     const workspace = data.files.length
       ? data.files.map((f) => `### DOSIYE: ${f.name}\n${f.content}`).join("\n\n")
       : "(umushinga ntacyo urimo)";
