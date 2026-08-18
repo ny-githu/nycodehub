@@ -1,7 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { assertActiveAccount } from "./access.server";
 
 
 const ENDPOINTS = [
@@ -75,7 +74,6 @@ export const runCodeRemote = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
-    await assertActiveAccount(context.userId);
 
     const runtime = RUNTIME[data.language];
     if (!runtime) {

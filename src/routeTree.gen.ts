@@ -14,15 +14,12 @@ import { Route as McpRouteImport } from './routes/mcp'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
-import { Route as AuthenticatedPricingRouteImport } from './routes/_authenticated/pricing'
 import { Route as AuthenticatedPracticeRouteImport } from './routes/_authenticated/practice'
-import { Route as AuthenticatedPaymentRouteImport } from './routes/_authenticated/payment'
 import { Route as AuthenticatedPathsRouteImport } from './routes/_authenticated/paths'
 import { Route as AuthenticatedCoursesRouteImport } from './routes/_authenticated/courses'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
-import { Route as ApiPublicMomoSmsRouteImport } from './routes/api/public/momo-sms'
 import { Route as AuthenticatedCoursesSlugRouteImport } from './routes/_authenticated/courses.$slug'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
@@ -51,19 +48,9 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedPricingRoute = AuthenticatedPricingRouteImport.update({
-  id: '/pricing',
-  path: '/pricing',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
 const AuthenticatedPracticeRoute = AuthenticatedPracticeRouteImport.update({
   id: '/practice',
   path: '/practice',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedPaymentRoute = AuthenticatedPaymentRouteImport.update({
-  id: '/payment',
-  path: '/payment',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedPathsRoute = AuthenticatedPathsRouteImport.update({
@@ -93,11 +80,6 @@ const Char91DotmcpChar93ListToolsRoute =
     path: '/.mcp/list-tools',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicMomoSmsRoute = ApiPublicMomoSmsRouteImport.update({
-  id: '/api/public/momo-sms',
-  path: '/api/public/momo-sms',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthenticatedCoursesSlugRoute =
   AuthenticatedCoursesSlugRouteImport.update({
     id: '/$slug',
@@ -126,13 +108,10 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRoute
   '/courses': typeof AuthenticatedCoursesRouteWithChildren
   '/paths': typeof AuthenticatedPathsRoute
-  '/payment': typeof AuthenticatedPaymentRoute
   '/practice': typeof AuthenticatedPracticeRoute
-  '/pricing': typeof AuthenticatedPricingRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/courses/$slug': typeof AuthenticatedCoursesSlugRoute
-  '/api/public/momo-sms': typeof ApiPublicMomoSmsRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -143,14 +122,11 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminRoute
   '/courses': typeof AuthenticatedCoursesRouteWithChildren
   '/paths': typeof AuthenticatedPathsRoute
-  '/payment': typeof AuthenticatedPaymentRoute
   '/practice': typeof AuthenticatedPracticeRoute
-  '/pricing': typeof AuthenticatedPricingRoute
   '/': typeof AuthenticatedIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/courses/$slug': typeof AuthenticatedCoursesSlugRoute
-  '/api/public/momo-sms': typeof ApiPublicMomoSmsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -163,14 +139,11 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/courses': typeof AuthenticatedCoursesRouteWithChildren
   '/_authenticated/paths': typeof AuthenticatedPathsRoute
-  '/_authenticated/payment': typeof AuthenticatedPaymentRoute
   '/_authenticated/practice': typeof AuthenticatedPracticeRoute
-  '/_authenticated/pricing': typeof AuthenticatedPricingRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/_authenticated/courses/$slug': typeof AuthenticatedCoursesSlugRoute
-  '/api/public/momo-sms': typeof ApiPublicMomoSmsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -184,13 +157,10 @@ export interface FileRouteTypes {
     | '/admin'
     | '/courses'
     | '/paths'
-    | '/payment'
     | '/practice'
-    | '/pricing'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/courses/$slug'
-    | '/api/public/momo-sms'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
@@ -201,14 +171,11 @@ export interface FileRouteTypes {
     | '/admin'
     | '/courses'
     | '/paths'
-    | '/payment'
     | '/practice'
-    | '/pricing'
     | '/'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/courses/$slug'
-    | '/api/public/momo-sms'
   id:
     | '__root__'
     | '/_authenticated'
@@ -220,14 +187,11 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/_authenticated/courses'
     | '/_authenticated/paths'
-    | '/_authenticated/payment'
     | '/_authenticated/practice'
-    | '/_authenticated/pricing'
     | '/_authenticated/'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/_authenticated/courses/$slug'
-    | '/api/public/momo-sms'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -239,7 +203,6 @@ export interface RootRouteChildren {
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
-  ApiPublicMomoSmsRoute: typeof ApiPublicMomoSmsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -279,25 +242,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/pricing': {
-      id: '/_authenticated/pricing'
-      path: '/pricing'
-      fullPath: '/pricing'
-      preLoaderRoute: typeof AuthenticatedPricingRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
     '/_authenticated/practice': {
       id: '/_authenticated/practice'
       path: '/practice'
       fullPath: '/practice'
       preLoaderRoute: typeof AuthenticatedPracticeRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/payment': {
-      id: '/_authenticated/payment'
-      path: '/payment'
-      fullPath: '/payment'
-      preLoaderRoute: typeof AuthenticatedPaymentRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/paths': {
@@ -333,13 +282,6 @@ declare module '@tanstack/react-router' {
       path: '/.mcp/list-tools'
       fullPath: '/.mcp/list-tools'
       preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/momo-sms': {
-      id: '/api/public/momo-sms'
-      path: '/api/public/momo-sms'
-      fullPath: '/api/public/momo-sms'
-      preLoaderRoute: typeof ApiPublicMomoSmsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/courses/$slug': {
@@ -381,9 +323,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedCoursesRoute: typeof AuthenticatedCoursesRouteWithChildren
   AuthenticatedPathsRoute: typeof AuthenticatedPathsRoute
-  AuthenticatedPaymentRoute: typeof AuthenticatedPaymentRoute
   AuthenticatedPracticeRoute: typeof AuthenticatedPracticeRoute
-  AuthenticatedPricingRoute: typeof AuthenticatedPricingRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
 
@@ -391,9 +331,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedCoursesRoute: AuthenticatedCoursesRouteWithChildren,
   AuthenticatedPathsRoute: AuthenticatedPathsRoute,
-  AuthenticatedPaymentRoute: AuthenticatedPaymentRoute,
   AuthenticatedPracticeRoute: AuthenticatedPracticeRoute,
-  AuthenticatedPricingRoute: AuthenticatedPricingRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }
 
@@ -411,7 +349,6 @@ const rootRouteChildren: RootRouteChildren = {
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
-  ApiPublicMomoSmsRoute: ApiPublicMomoSmsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
