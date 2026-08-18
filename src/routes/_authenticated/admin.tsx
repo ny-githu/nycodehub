@@ -4,20 +4,13 @@ import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { adminCreateUser, adminDeleteUser, adminSetUserDisabled } from "@/lib/admin.functions";
-import {
-  adminListPlans, adminUpsertPlan, adminDeletePlan,
-  adminUpdateSettings, adminUsersOverview,
-  adminListPaymentRequests, adminReviewPayment, adminExtendUser, adminSetUserExpiry,
-  getPaymentPage,
-} from "@/lib/payments.functions";
-import { adminListMomoSms, adminUpdateMomoSms, adminAddMomoSms } from "@/lib/momo.functions";
+import { adminCreateUser, adminDeleteUser, adminSetUserDisabled, adminUsersOverview } from "@/lib/admin.functions";
 import {
   adminGetNycoder, adminSaveNycoder, adminAddTraining, adminDeleteTraining,
   adminAnalytics, adminListBroadcasts, adminSaveBroadcast, adminDeleteBroadcast,
   adminListPages, adminSavePage,
 } from "@/lib/nycoder-admin.functions";
-import { Loader2, Trash2, ShieldCheck, UserPlus, CreditCard, Settings as SettingsIcon, Users, Receipt, CheckCircle2, XCircle, Clock, Pencil, Plus, Calendar, Search, Lock, Unlock, Smartphone, BarChart3, Bot, Megaphone, FileText, Save } from "lucide-react";
+import { Loader2, Trash2, ShieldCheck, UserPlus, Users, Pencil, Plus, Search, Lock, Unlock, BarChart3, Bot, Megaphone, FileText, Save } from "lucide-react";
 import { toast } from "sonner";
 import { t } from "@/lib/i18n";
 
@@ -33,18 +26,10 @@ export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
 });
 
-type Tab = "users" | "plans" | "settings" | "payments" | "momo" | "analytics" | "nycoder" | "broadcast" | "pages";
+type Tab = "users" | "analytics" | "nycoder" | "broadcast" | "pages";
 
 function AdminPage() {
-  const [tab, setTab] = useState<Tab>("payments");
-  const listFn = useServerFn(adminListPaymentRequests);
-  const { data: allRequests } = useQuery({
-    queryKey: ["admin-payments"],
-    queryFn: () => listFn(),
-    refetchInterval: 15_000,
-    refetchOnWindowFocus: true,
-  });
-  const pendingCount = (allRequests ?? []).filter((r) => r.status === "pending").length;
+  const [tab, setTab] = useState<Tab>("analytics");
 
   return (
     <Layout>
@@ -59,19 +44,6 @@ function AdminPage() {
           </div>
         </div>
 
-        {pendingCount > 0 && (
-          <button
-            onClick={() => setTab("payments")}
-            className="mb-6 w-full flex items-center gap-2 rounded-lg border border-primary/40 bg-primary/10 px-4 py-3 text-left text-sm hover-scale"
-          >
-            <Clock className="size-4 text-primary" />
-            <span>
-              <span className="font-semibold">{pendingCount}</span> transaction ID{" "}
-              {pendingCount === 1 ? "itegereje" : "zitegereje"} kwemezwa — kanda hano ubireba.
-            </span>
-          </button>
-        )}
-
         <div className="flex flex-wrap gap-1 mb-6 border-b border-border">
           {([
             ["analytics", BarChart3, "Imibare"],
@@ -79,10 +51,6 @@ function AdminPage() {
             ["nycoder", Bot, "NYCODER"],
             ["broadcast", Megaphone, "Ubutumwa"],
             ["pages", FileText, "Impapuro"],
-            ["payments", Receipt, t.admin_tab_payments],
-            ["momo", Smartphone, "MoMo SMS"],
-            ["plans", CreditCard, t.admin_tab_plans],
-            ["settings", SettingsIcon, t.admin_tab_settings],
           ] as const).map(([id, Icon, label]) => (
             <button
               key={id}
@@ -92,25 +60,15 @@ function AdminPage() {
               }`}
             >
               <Icon className="size-4" /> {label}
-              {id === "payments" && pendingCount > 0 && (
-                <span className="ml-1 grid place-items-center min-w-5 h-5 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold">
-                  {pendingCount}
-                </span>
-              )}
             </button>
           ))}
         </div>
-
 
         {tab === "analytics" && <AnalyticsTab />}
         {tab === "users" && <UsersTab />}
         {tab === "nycoder" && <NycoderTab />}
         {tab === "broadcast" && <BroadcastTab />}
         {tab === "pages" && <PagesTab />}
-        {tab === "payments" && <PaymentsTab />}
-        {tab === "momo" && <MomoTab />}
-        {tab === "plans" && <PlansTab />}
-        {tab === "settings" && <SettingsTab />}
       </div>
     </Layout>
   );
@@ -121,8 +79,6 @@ function UsersTab() {
   const overviewFn = useServerFn(adminUsersOverview);
   const createFn = useServerFn(adminCreateUser);
   const deleteFn = useServerFn(adminDeleteUser);
-  const extendFn = useServerFn(adminExtendUser);
-  const setExpiryFn = useServerFn(adminSetUserExpiry);
   const setDisabledFn = useServerFn(adminSetUserDisabled);
   const [search, setSearch] = useState("");
 
@@ -138,26 +94,16 @@ function UsersTab() {
     onSuccess: () => { toast.success(t.admin_done); qc.invalidateQueries({ queryKey: ["admin-overview"] }); },
     onError: (e) => toast.error(e instanceof Error ? e.message : t.admin_failed),
   });
-  const extendMut = useMutation({
-    mutationFn: (v: { userId: string; days: number }) => extendFn({ data: v }),
-    onSuccess: () => { toast.success(t.admin_done); qc.invalidateQueries({ queryKey: ["admin-overview"] }); },
-    onError: (e) => toast.error(e instanceof Error ? e.message : t.admin_failed),
-  });
-  const setExpiryMut = useMutation({
-    mutationFn: (v: { userId: string; expiresAt: string | null }) => setExpiryFn({ data: v }),
-    onSuccess: () => { toast.success(t.admin_done); qc.invalidateQueries({ queryKey: ["admin-overview"] }); },
-    onError: (e) => toast.error(e instanceof Error ? e.message : t.admin_failed),
-  });
   const disableMut = useMutation({
     mutationFn: (v: { userId: string; disabled: boolean }) => setDisabledFn({ data: v }),
     onSuccess: () => { toast.success(t.admin_done); qc.invalidateQueries({ queryKey: ["admin-overview"] }); },
     onError: (e) => toast.error(e instanceof Error ? e.message : t.admin_failed),
   });
 
-  const [form, setForm] = useState({ email: "", password: "", displayName: "", role: "learner" as "admin" | "instructor" | "learner", days: 30 });
+  const [form, setForm] = useState({ email: "", password: "", displayName: "", role: "learner" as "admin" | "instructor" | "learner" });
 
   const q = search.trim().toLowerCase();
-  const filteredUsers = (users ?? []).filter((u) => !q || (u.email ?? "").toLowerCase().includes(q));
+  const filteredUsers = (users ?? []).filter((u) => !q || u.email.toLowerCase().includes(q));
   const active = (users ?? []).filter((u) => u.active);
   const inactive = (users ?? []).filter((u) => !u.active);
 
@@ -165,17 +111,13 @@ function UsersTab() {
     <>
       <section className="rounded-xl border border-border bg-gradient-card p-6 mb-6">
         <h2 className="text-lg font-semibold flex items-center gap-2"><UserPlus className="size-4" /> {t.admin_create_account}</h2>
+        <p className="mt-1 text-xs text-muted-foreground">Abakoresha bashobora kwiyandikisha ubwabo ku buntu — iyi form ni inyongera gusa.</p>
         <form
           className="mt-4 grid sm:grid-cols-2 lg:grid-cols-5 gap-3"
           onSubmit={(e) => {
             e.preventDefault();
             createMut.mutate({ ...form }, {
-              onSuccess: async (res: { id?: string }) => {
-                if (form.days > 0 && res.id) {
-                  await extendMut.mutateAsync({ userId: res.id, days: form.days });
-                }
-                setForm({ email: "", password: "", displayName: "", role: "learner", days: 30 });
-              },
+              onSuccess: () => setForm({ email: "", password: "", displayName: "", role: "learner" }),
             });
           }}
         >
@@ -187,14 +129,10 @@ function UsersTab() {
             <option value="instructor">instructor</option>
             <option value="admin">admin</option>
           </select>
-          <div className="flex gap-2">
-            <input type="number" min={0} max={3650} value={form.days} onChange={(e) => setForm({ ...form, days: Number(e.target.value) })} className="w-20 px-3 py-2 rounded-md bg-surface border border-border text-sm font-mono" title={t.admin_form_days} />
-            <button type="submit" disabled={createMut.isPending} className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-gradient-primary text-primary-foreground font-medium shadow-glow disabled:opacity-60">
-              {createMut.isPending && <Loader2 className="size-4 animate-spin" />} {t.admin_btn_create}
-            </button>
-          </div>
+          <button type="submit" disabled={createMut.isPending} className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-gradient-primary text-primary-foreground font-medium shadow-glow disabled:opacity-60">
+            {createMut.isPending && <Loader2 className="size-4 animate-spin" />} {t.admin_btn_create}
+          </button>
         </form>
-        <p className="mt-2 text-xs text-muted-foreground font-mono">{t.admin_form_days_hint}</p>
       </section>
 
       <div className="grid gap-4 mb-4 sm:grid-cols-3">
@@ -224,7 +162,6 @@ function UsersTab() {
                   <th className="text-left p-3">{t.admin_th_email}</th>
                   <th className="text-left p-3">{t.admin_th_roles}</th>
                   <th className="text-left p-3">{t.admin_th_status}</th>
-                  <th className="text-left p-3">{t.admin_th_expires}</th>
                   <th className="p-3"></th>
                 </tr>
               </thead>
@@ -238,14 +175,9 @@ function UsersTab() {
                         <span className="text-xs px-2 py-0.5 rounded bg-primary/20 text-primary-glow">{t.admin_status_admin}</span>
                       ) : u.disabled ? (
                         <span className="text-xs px-2 py-0.5 rounded bg-destructive/20 text-destructive">{t.admin_status_disabled}</span>
-                      ) : u.active ? (
-                        <span className="text-xs px-2 py-0.5 rounded bg-success/20 text-success">{t.admin_status_active}</span>
                       ) : (
-                        <span className="text-xs px-2 py-0.5 rounded bg-chart-4/20 text-chart-4">{t.admin_status_expired}</span>
+                        <span className="text-xs px-2 py-0.5 rounded bg-success/20 text-success">{t.admin_status_active}</span>
                       )}
-                    </td>
-                    <td className="p-3 font-mono text-xs">
-                      {u.expires_at ? new Date(u.expires_at).toLocaleString() : "—"}
                     </td>
                     <td className="p-3 text-right">
                       <div className="flex items-center justify-end gap-1">
@@ -258,17 +190,6 @@ function UsersTab() {
                             {u.disabled ? <><Unlock className="size-3" /> {t.admin_btn_enable}</> : <><Lock className="size-3" /> {t.admin_btn_disable}</>}
                           </button>
                         )}
-                        <ExtendButton onExtend={(days) => extendMut.mutate({ userId: u.id, days })} />
-                        <button
-                          onClick={() => {
-                            const v = prompt(t.admin_set_expiry_prompt, u.expires_at ? u.expires_at.slice(0,10) : "");
-                            if (v === null) return;
-                            const iso = v.trim() ? new Date(v).toISOString() : null;
-                            setExpiryMut.mutate({ userId: u.id, expiresAt: iso });
-                          }}
-                          className="p-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-surface rounded"
-                          title={t.admin_th_expires}
-                        ><Calendar className="size-3.5" /></button>
                         <button
                           onClick={() => { if (confirm(`${t.admin_btn_delete} ${u.email}?`)) deleteMut.mutate(u.id); }}
                           className="p-1.5 text-xs text-destructive hover:bg-destructive/10 rounded"
@@ -286,25 +207,6 @@ function UsersTab() {
   );
 }
 
-function ExtendButton({ onExtend }: { onExtend: (days: number) => void }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="relative">
-      <button onClick={() => setOpen((o) => !o)} className="px-2 py-1 text-xs rounded bg-surface hover:bg-surface-elevated border border-border">
-        {t.admin_btn_extend}
-      </button>
-      {open && (
-        <div className="absolute right-0 mt-1 z-10 bg-surface-elevated border border-border rounded-md shadow-elevated p-1">
-          {[7, 14, 30, 90].map((d) => (
-            <button key={d} onClick={() => { onExtend(d); setOpen(false); }} className="block w-full text-left px-3 py-1 text-xs hover:bg-surface rounded">
-              +{d} {t.payment_days_unit}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
 
 function Stat({ label, value, tone }: { label: string; value: number; tone?: "success" | "destructive" }) {
   return (
